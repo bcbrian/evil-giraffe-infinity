@@ -8,8 +8,16 @@ import {
   ScrollRestoration,
   useLoaderData,
 } from "@remix-run/react";
-import type { LoaderFunction, ActionFunction } from "@remix-run/node";
+import type {
+  LoaderFunction,
+  ActionFunction,
+  LinksFunction,
+} from "@remix-run/node";
 import { createSupabaseServerClient } from "./supabase/client.server";
+
+import styles from "./tailwind.css?url";
+
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
 export const loader: LoaderFunction = async ({ request }) => {
   const headers = new Headers();

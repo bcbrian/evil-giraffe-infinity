@@ -90,3 +90,9 @@ Refer to Remix’s official documentation for best practices in Routes, Loaders,
 **Importing Remix Packages**
 
 - Always import from `@remix-run/react` and `@remix-run/node`.
+
+**Visual UI styles**
+
+- Use tailwind for visual ui styles
+
+- try to match designs in images
