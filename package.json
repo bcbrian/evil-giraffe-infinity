@@ -17,6 +17,9 @@
     "@remix-run/node": "^2.12.1",
     "@remix-run/react": "^2.12.1",
     "@remix-run/serve": "^2.12.1",
+    "@supabase/ssr": "^0.5.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "cookie": "^0.6.0",
     "isbot": "^4.1.0"
   },
   "devDependencies": {
