@@ -1,26 +1,31 @@
-import { usePlaidLink } from "react-plaid-link";
+import { usePlaidLink, PlaidLinkOnSuccess } from "react-plaid-link";
 
 interface PlaidLinkButtonProps {
   token: string;
+  onSuccess: PlaidLinkOnSuccess;
+  className?: string;
+  children?: React.ReactNode;
 }
 
-export default function PlaidLinkButton({ token }: PlaidLinkButtonProps) {
+export default function PlaidLinkButton({
+  token,
+  onSuccess,
+  className = "",
+  children = "Connect Account",
+}: PlaidLinkButtonProps) {
   const { open, ready, error } = usePlaidLink({
     token,
-    onSuccess: (public_token, metadata) => {
-      console.log("Public Token: ", public_token);
-      console.log("Metadata: ", metadata);
-      // Send the public_token to your server to exchange for an access_token
-    },
+    onSuccess,
     onExit: (error, metadata) => {
       console.log("Exit: ", error, metadata);
     },
   });
-  console.log("error", error);
+
+  if (error) console.error("Plaid Link Error:", error);
 
   return (
-    <button onClick={() => open()} disabled={!ready}>
-      Connect Account
+    <button onClick={() => open()} disabled={!ready} className={className}>
+      {children}
     </button>
   );
 }
