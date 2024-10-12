@@ -11,6 +11,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@date-fns/utc": "^2.1.0",
     "@netlify/edge-functions": "^2.3.1",
     "@netlify/remix-edge-adapter": "^3.2.1",
     "@netlify/remix-runtime": "^2.2.0",
@@ -20,6 +21,7 @@
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.4",
     "cookie": "^0.6.0",
+    "date-fns": "^4.1.0",
     "isbot": "^4.1.0",
     "plaid": "^28.0.0",
     "react-plaid-link": "^3.6.0"

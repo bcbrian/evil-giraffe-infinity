@@ -3,13 +3,9 @@ import type { ActionFunction } from "@remix-run/node";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 
 export const action: ActionFunction = async ({ request }) => {
-  console.log("Starting budget creation action");
-
   const formData = await request.formData();
   const name = formData.get("name") as string;
   const amount = parseFloat(formData.get("amount") as string);
-
-  console.log(`Received form data: name=${name}, amount=${amount}`);
 
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
@@ -17,31 +13,18 @@ export const action: ActionFunction = async ({ request }) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log(
-    `User authentication status: ${
-      user ? "Authenticated" : "Not authenticated"
-    }`
-  );
-
   if (!user) {
-    console.log("User not authenticated, redirecting to login");
     return redirect("/login");
   }
 
-  console.log(`Attempting to insert budget for user ${user.id}`);
-  console.log(`Budget data: name=${name}, amount=${amount}`);
-
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("budgets")
     .insert([{ name, amount, owner: user.id }]);
 
-  console.log("Supabase response data:", data);
   if (error) {
-    console.error(`Error inserting budget: ${JSON.stringify(error, null, 2)}`);
     return json({ error: error.message || "Unknown error" }, { headers });
   }
 
-  console.log("Budget created successfully, redirecting to budgets page");
   return redirect("/budgets");
 };
 
