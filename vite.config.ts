@@ -5,4 +5,7 @@ import { netlifyPlugin } from "@netlify/remix-edge-adapter/plugin";
 
 export default defineConfig({
   plugins: [remix(), netlifyPlugin(), tsconfigPaths()],
+  define: {
+    "process.env": process.env,
+  },
 });
