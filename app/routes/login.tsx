@@ -31,7 +31,12 @@ export const action: ActionFunction = async ({ request }) => {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
 
-  const { error } = await supabase.auth.signInWithOtp({ email });
+  const SITE_URL = process.env.SITE_URL || "http://localhost:8888";
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: `${SITE_URL}/callback` },
+  });
 
   if (error) {
     return json({ error: error.message }, { headers });
