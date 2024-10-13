@@ -7,11 +7,13 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  redirect,
 } from "@remix-run/react";
 import type {
   LoaderFunction,
   ActionFunction,
   LinksFunction,
+  MetaFunction,
 } from "@remix-run/node";
 import { createSupabaseServerClient } from "./supabase/client.server";
 
@@ -19,12 +21,32 @@ import styles from "./tailwind.css?url";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
+export const meta: MetaFunction = () => [
+  { charset: "utf-8" },
+  { title: "Evil Giraffe" },
+  {
+    name: "viewport",
+    content: "width=device-width,initial-scale=1,shrink-to-fit=no",
+  },
+];
+
 export const loader: LoaderFunction = async ({ request }) => {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const url = new URL(request.url);
+  const isLoginPage = url.pathname === "/login";
+
+  if (!user && !isLoginPage) {
+    return redirect("/login", { headers });
+  }
+
+  if (user && isLoginPage) {
+    return redirect("/dashboard", { headers });
+  }
 
   return json({ user }, { headers });
 };

@@ -22,7 +22,9 @@
     "@supabase/supabase-js": "^2.45.4",
     "cookie": "^0.6.0",
     "date-fns": "^4.1.0",
+    "framer-motion": "^11.11.8",
     "isbot": "^4.1.0",
+    "lucide-react": "^0.452.0",
     "plaid": "^28.0.0",
     "react-plaid-link": "^3.6.0"
   },

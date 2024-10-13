@@ -3,6 +3,8 @@ import { useLoaderData, Link, useSearchParams } from "@remix-run/react";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { UTCDate } from "@date-fns/utc";
 import MonthSelector from "~/components/MonthSelector";
+import { motion } from "framer-motion";
+import { DollarSign, AlertTriangle, ChevronRight } from "lucide-react";
 
 interface Budget {
   id: string;
@@ -70,7 +72,6 @@ export const loader: LoaderFunction = async ({ request }) => {
     return json({ error: "Failed to fetch data" }, { status: 500 });
   }
 
-  // Add this part to get unassigned categories
   const allCategories = Array.from(
     new Set(transactions.map((t) => t.category))
   );
@@ -94,7 +95,7 @@ export default function Manage() {
 
   const calculateBudgetUsage = (budget: Budget) => {
     if (!budget.categories || budget.categories.length === 0) {
-      return 0; // Return 0 if no categories are assigned
+      return 0;
     }
     return transactions
       .filter((t) => budget.categories!.includes(t.category))
@@ -106,64 +107,98 @@ export default function Manage() {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Manage Budgets</h1>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="p-6 bg-gradient-to-br from-purple-900 to-indigo-900 min-h-screen text-purple-100"
+    >
+      <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+        Manage Budgets
+      </h1>
       <MonthSelector
         currentMonth={currentMonth}
         onMonthChange={handleMonthChange}
       />
-      <div className="space-y-4">
+      <div className="space-y-4 mt-6">
         {budgets.map((budget) => {
           const usage = calculateBudgetUsage(budget);
           const percentage = Math.min((usage / budget.amount) * 100, 100);
           return (
-            <Link
+            <motion.div
               key={budget.id}
-              to={`/manage/${budget.id}?month=${currentMonth}`}
-              className="block border p-4 rounded hover:bg-gray-50 transition duration-150 ease-in-out"
+              whileHover={{ scale: 1.02 }}
+              className="block bg-black bg-opacity-50 p-4 rounded-lg shadow-lg hover:shadow-purple-500/20 transition duration-300 ease-in-out"
             >
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold">{budget.name}</span>
-                <span>${budget.amount}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-green-600 h-2.5 rounded-full"
-                  style={{ width: `${percentage}%` }}
-                ></div>
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                ${usage.toFixed(2)} / ${budget.amount}
-              </div>
-              {(!budget.categories || budget.categories.length === 0) && (
-                <div className="text-sm text-yellow-600 mt-1">
-                  No categories assigned
+              <Link
+                to={`/manage/${budget.id}?month=${currentMonth}`}
+                className="flex flex-col"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-purple-300">
+                    {budget.name}
+                  </span>
+                  <span className="text-purple-200 flex items-center">
+                    <DollarSign size={16} className="mr-1" />
+                    {budget.amount}
+                  </span>
                 </div>
-              )}
-            </Link>
+                <div className="w-full bg-purple-900 rounded-full h-2.5 mb-2">
+                  <motion.div
+                    className="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full"
+                    style={{ width: `${percentage}%` }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percentage}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                  ></motion.div>
+                </div>
+                <div className="text-sm text-purple-300 flex justify-between items-center">
+                  <span>
+                    ${usage.toFixed(2)} / ${budget.amount}
+                  </span>
+                  <ChevronRight size={16} />
+                </div>
+                {(!budget.categories || budget.categories.length === 0) && (
+                  <div className="text-sm text-yellow-400 mt-1 flex items-center">
+                    <AlertTriangle size={16} className="mr-1" />
+                    No categories assigned
+                  </div>
+                )}
+              </Link>
+            </motion.div>
           );
         })}
       </div>
       <Link
         to="/budgets"
-        className="mt-4 inline-block px-4 py-2 bg-blue-500 text-white rounded"
+        className="mt-6 inline-block px-6 py-3 bg-purple-600 text-purple-100 rounded-full font-semibold shadow-lg shadow-purple-500/50 hover:bg-purple-700 transition duration-300 ease-in-out"
       >
         Manage Budgets
       </Link>
 
-      {/* Add this section to display unassigned categories */}
       {unassignedCategories.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-2">Unassigned Categories</h2>
-          <ul className="list-disc list-inside">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mt-8 bg-black bg-opacity-50 p-6 rounded-lg shadow-lg"
+        >
+          <h2 className="text-xl font-semibold mb-4 text-purple-300">
+            Unassigned Categories
+          </h2>
+          <ul className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {unassignedCategories.map((category) => (
-              <li key={category} className="text-gray-700">
+              <li
+                key={category}
+                className="text-purple-200 bg-purple-800 bg-opacity-50 px-3 py-2 rounded-md flex items-center"
+              >
+                <AlertTriangle size={16} className="mr-2 text-yellow-400" />
                 {category}
               </li>
             ))}
           </ul>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

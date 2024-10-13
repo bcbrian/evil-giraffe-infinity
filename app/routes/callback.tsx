@@ -26,7 +26,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   }
 
   // Forward the Set-Cookie header to the client
-  return redirect("/", {
+  return redirect("/dashboard", {
     headers: headers,
   });
 };

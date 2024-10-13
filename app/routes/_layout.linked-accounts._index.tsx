@@ -5,11 +5,17 @@ import {
   PlaidLinkOnSuccess,
   PlaidLinkOnSuccessMetadata,
 } from "react-plaid-link";
-
 import { ActionFunction, json, redirect } from "@remix-run/node";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import type { LoaderFunction } from "@remix-run/node";
 import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus,
+  RefreshCw as Refresh,
+  Building as Bank,
+  CreditCard,
+} from "lucide-react";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.sandbox,
@@ -120,6 +126,7 @@ export const action: ActionFunction = async ({ request }) => {
     return json({ error: "Failed to link account" }, { status: 500, headers });
   }
 };
+
 export default function LinkedAccounts() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const fetcher = useFetcher();
@@ -149,67 +156,102 @@ export default function LinkedAccounts() {
   };
 
   return (
-    <div className="p-6 max-w-md mx-auto bg-white rounded-xl shadow-md space-y-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="p-6 max-w-3xl mx-auto bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl shadow-lg space-y-6 text-purple-100"
+    >
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold">Linked Accounts</h1>
+        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+          Linked Accounts
+        </h1>
         {linkToken && (
           <PlaidLinkButton
             token={linkToken}
             onSuccess={handlePlaidSuccess}
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105"
           >
-            +
+            <Plus size={24} />
           </PlaidLinkButton>
         )}
       </div>
-      {linkedAccounts && linkedAccounts.length > 0 ? (
-        <ul className="space-y-4">
-          {linkedAccounts.map((account: LinkedAccount) => (
-            <li key={account.id} className="border-b pb-2">
-              <div className="flex justify-between items-center font-semibold">
-                <span>
-                  {account.metadata.institution
-                    ? account.metadata.institution.name
-                    : "Unknown Institution"}
-                </span>
-                <button
-                  onClick={() => handleSync(account.id)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded text-sm"
-                >
-                  Sync
-                </button>
-              </div>
-              {account.metadata.accounts &&
-              account.metadata.accounts.length > 0 ? (
-                <ul className="pl-4 mt-2 space-y-1">
-                  {account.metadata.accounts.map((acc) => (
-                    <li key={acc.id} className="text-sm">
-                      {acc.name} - {acc.mask}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500">No accounts found</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="text-center space-y-4">
-          <p className="text-gray-600">
-            You don&rsquo;t have any linked accounts yet
-          </p>
-          {linkToken && (
-            <PlaidLinkButton
-              token={linkToken}
-              onSuccess={handlePlaidSuccess}
-              className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-            >
-              Connect Account
-            </PlaidLinkButton>
-          )}
-        </div>
-      )}
-    </div>
+      <AnimatePresence>
+        {linkedAccounts && linkedAccounts.length > 0 ? (
+          <motion.ul
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-4"
+          >
+            {linkedAccounts.map((account: LinkedAccount) => (
+              <motion.li
+                key={account.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="border border-purple-700 rounded-lg p-4 bg-black bg-opacity-30 hover:bg-opacity-40 transition duration-300 ease-in-out"
+              >
+                <div className="flex justify-between items-center font-semibold mb-2">
+                  <span className="flex items-center">
+                    <Bank className="mr-2 text-purple-400" size={20} />
+                    {account.metadata.institution
+                      ? account.metadata.institution.name
+                      : "Unknown Institution"}
+                  </span>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleSync(account.id)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300 ease-in-out flex items-center"
+                  >
+                    <Refresh size={16} className="mr-2" />
+                    Sync
+                  </motion.button>
+                </div>
+                {account.metadata.accounts &&
+                account.metadata.accounts.length > 0 ? (
+                  <ul className="pl-4 mt-2 space-y-2">
+                    {account.metadata.accounts.map((acc) => (
+                      <li key={acc.id} className="flex items-center text-sm">
+                        <CreditCard
+                          className="mr-2 text-purple-400"
+                          size={16}
+                        />
+                        {acc.name} - {acc.mask}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-purple-400">No accounts found</p>
+                )}
+              </motion.li>
+            ))}
+          </motion.ul>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center space-y-4 bg-black bg-opacity-30 p-6 rounded-lg"
+          >
+            <p className="text-purple-300">
+              You don&rsquo;t have any linked accounts yet
+            </p>
+            {linkToken && (
+              <PlaidLinkButton
+                token={linkToken}
+                onSuccess={handlePlaidSuccess}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center"
+              >
+                <Bank className="mr-2" size={20} />
+                Connect Account
+              </PlaidLinkButton>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
