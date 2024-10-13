@@ -18,6 +18,9 @@ import { createSupabaseServerClient } from "./supabase/client.server";
 
 import styles from "./tailwind.css?url";
 
+// Define a list of paths that don't require authentication
+const publicPaths = ["/login", "/callback"];
+
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
 export const meta: MetaFunction = () => [
@@ -37,13 +40,16 @@ export const loader: LoaderFunction = async ({ request }) => {
   } = await supabase.auth.getUser();
 
   const url = new URL(request.url);
-  const isLoginPage = url.pathname === "/login";
+  const path = url.pathname;
 
-  if (!user && !isLoginPage) {
+  // Check if the current path is in the list of public paths
+  const isPublicPath = publicPaths.includes(path);
+
+  if (!user && !isPublicPath) {
     return redirect("/login", { headers });
   }
 
-  if (user && isLoginPage) {
+  if (user && path === "/login") {
     return redirect("/dashboard", { headers });
   }
 
