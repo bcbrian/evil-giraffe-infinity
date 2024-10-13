@@ -1,5 +1,5 @@
-import { redirect } from "@remix-run/node";
-import type { LoaderFunction } from "@remix-run/node";
+import { redirect } from "@netlify/remix-runtime";
+import type { LoaderFunction } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 
 export const loader: LoaderFunction = async ({ request }) => {

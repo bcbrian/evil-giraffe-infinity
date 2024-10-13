@@ -5,9 +5,9 @@ import {
   PlaidLinkOnSuccess,
   PlaidLinkOnSuccessMetadata,
 } from "react-plaid-link";
-import { ActionFunction, json, redirect } from "@remix-run/node";
+import { ActionFunction, json, redirect } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
-import type { LoaderFunction } from "@remix-run/node";
+import type { LoaderFunction } from "@netlify/remix-runtime";
 import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { motion, AnimatePresence } from "framer-motion";
 import {

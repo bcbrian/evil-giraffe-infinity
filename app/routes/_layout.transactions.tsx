@@ -1,4 +1,4 @@
-import { json, LoaderFunction } from "@remix-run/node";
+import { json, LoaderFunction } from "@netlify/remix-runtime";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { useState, useEffect } from "react";

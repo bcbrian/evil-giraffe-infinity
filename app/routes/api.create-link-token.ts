@@ -1,5 +1,5 @@
-import { json } from "@remix-run/node";
-import type { LoaderFunction } from "@remix-run/node";
+import { json } from "@netlify/remix-runtime";
+import type { LoaderFunction } from "@netlify/remix-runtime";
 import {
   PlaidApi,
   Configuration,

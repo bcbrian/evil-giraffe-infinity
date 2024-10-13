@@ -1,5 +1,6 @@
-import { Form, redirect, json, useActionData } from "@remix-run/react";
-import type { ActionFunction } from "@remix-run/node";
+import { Form, useActionData } from "@remix-run/react";
+import type { ActionFunction } from "@netlify/remix-runtime";
+import { redirect, json } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 
 export const action: ActionFunction = async ({ request }) => {

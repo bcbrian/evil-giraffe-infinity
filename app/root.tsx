@@ -1,5 +1,4 @@
 import {
-  json,
   Links,
   LiveReload,
   Meta,
@@ -7,14 +6,14 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
-  redirect,
 } from "@remix-run/react";
+import { redirect, json } from "@netlify/remix-runtime";
 import type {
   LoaderFunction,
   ActionFunction,
   LinksFunction,
   MetaFunction,
-} from "@remix-run/node";
+} from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "./supabase/client.server";
 
 import styles from "./tailwind.css?url";

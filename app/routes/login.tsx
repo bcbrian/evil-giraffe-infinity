@@ -1,6 +1,7 @@
-import { Form, json, useActionData, redirect } from "@remix-run/react";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import { Form, useActionData } from "@remix-run/react";
+import type { ActionFunction, LoaderFunction } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
+import { redirect, json } from "@netlify/remix-runtime";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const headers = new Headers();

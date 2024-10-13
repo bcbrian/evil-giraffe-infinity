@@ -1,5 +1,6 @@
-import { useLoaderData, redirect, json, Link } from "@remix-run/react";
-import type { LoaderFunction } from "@remix-run/node";
+import { useLoaderData, Link } from "@remix-run/react";
+import type { LoaderFunction } from "@netlify/remix-runtime";
+import { redirect, json } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { motion } from "framer-motion";
 import { PlusCircle, DollarSign } from "lucide-react";

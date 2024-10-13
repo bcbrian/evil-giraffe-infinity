@@ -1,4 +1,4 @@
-import { ActionFunction, json } from "@remix-run/node";
+import { ActionFunction, json } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 

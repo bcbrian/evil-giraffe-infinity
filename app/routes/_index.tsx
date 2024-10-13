@@ -1,5 +1,5 @@
 import type { MetaFunction } from "@netlify/remix-runtime";
-import { LoaderFunction, redirect } from "@remix-run/node";
+import { LoaderFunction, redirect } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 
 export const meta: MetaFunction = () => {

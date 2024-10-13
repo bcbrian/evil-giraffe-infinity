@@ -1,4 +1,4 @@
-import { json, LoaderFunction, ActionFunction } from "@remix-run/node";
+import { json, LoaderFunction, ActionFunction } from "@netlify/remix-runtime";
 import {
   useLoaderData,
   useActionData,
