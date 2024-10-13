@@ -3,14 +3,7 @@ import { useLoaderData, useSearchParams } from "@remix-run/react";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Search,
-  Calendar,
-  ChevronUp,
-  ChevronDown,
-  DollarSign,
-  Tag,
-} from "lucide-react";
+import { Search, Calendar, ChevronUp, ChevronDown, Tag } from "lucide-react";
 
 interface Transaction {
   id: string;
