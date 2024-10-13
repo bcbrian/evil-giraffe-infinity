@@ -3,6 +3,7 @@ import { useLoaderData } from "@remix-run/react";
 import { BudgetCircle } from "~/components/BudgetCircle";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const headers = new Headers();
@@ -89,55 +90,59 @@ export const loader: LoaderFunction = async ({ request }) => {
 export default function Dashboard() {
   const { budgetPercentage, remainingAmount, daysLeft, error } =
     useLoaderData<typeof loader>();
+  const [renderedContent, setRenderedContent] =
+    useState<React.ReactNode | null>(null);
 
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center text-red-400 bg-red-900 bg-opacity-50 p-4 rounded-lg shadow-lg"
-      >
-        {error}
-      </motion.div>
-    );
-  }
+  useEffect(() => {
+    if (error) {
+      setRenderedContent(
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center text-red-400 bg-red-900 bg-opacity-50 p-4 rounded-lg shadow-lg"
+        >
+          {error}
+        </motion.div>
+      );
+    } else if (
+      budgetPercentage === null ||
+      remainingAmount === null ||
+      daysLeft === null
+    ) {
+      setRenderedContent(
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-center text-purple-300"
+        >
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+          <span className="ml-2">Loading...</span>
+        </motion.div>
+      );
+    } else {
+      setRenderedContent(
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center justify-center h-full p-4"
+        >
+          <BudgetCircle
+            percentage={budgetPercentage}
+            amount={remainingAmount}
+            daysLeft={daysLeft}
+            backgroundColor="rgba(76, 29, 149, 0.5)"
+            startColor="#22c55e"
+            endColor="#ef4444"
+            textColor="text-purple-100"
+            strokeColor="text-purple-400"
+          />
+        </motion.div>
+      );
+    }
+  }, [error, budgetPercentage, remainingAmount, daysLeft]);
 
-  if (
-    budgetPercentage === null ||
-    remainingAmount === null ||
-    daysLeft === null
-  ) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="text-center text-purple-300"
-      >
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-        <span className="ml-2">Loading...</span>
-      </motion.div>
-    );
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      className="flex flex-col items-center justify-center h-full p-4"
-    >
-      <BudgetCircle
-        percentage={budgetPercentage}
-        amount={remainingAmount}
-        daysLeft={daysLeft}
-        backgroundColor="rgba(76, 29, 149, 0.5)"
-        startColor="#22c55e"
-        endColor="#ef4444"
-        textColor="text-purple-100"
-        strokeColor="text-purple-400"
-      />
-    </motion.div>
-  );
+  return renderedContent;
 }
