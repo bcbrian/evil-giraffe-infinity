@@ -18,9 +18,6 @@ import { createSupabaseServerClient } from "./supabase/client.server";
 
 import styles from "./tailwind.css?url";
 
-// @ts-expect-error virtual module
-global.SVGElement = global.Element;
-
 // Define a list of paths that don't require authentication
 const publicPaths = ["/login", "/callback"];
 
