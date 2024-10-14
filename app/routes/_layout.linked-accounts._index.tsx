@@ -68,42 +68,33 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export const action: ActionFunction = async ({ request }) => {
-  console.log("Starting action function");
   const formData = await request.formData();
   const publicToken = formData.get("public_token") as string;
   const metadata = formData.get("metadata") as string;
-  console.log("Received public token and metadata");
 
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
-  console.log("Created Supabase client");
 
   // Get the current user's ID
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  console.log("Fetched user data:", user);
 
   if (!user) {
-    console.log("User not authenticated");
     return json({ error: "User not authenticated" }, { status: 401, headers });
   }
 
   // Exchange public token for access token
   try {
-    console.log("Attempting to exchange public token");
     const exchangeResponse = await plaidClient.itemPublicTokenExchange({
       public_token: publicToken,
     });
-    console.log("Public token exchanged successfully");
 
     const accessToken = exchangeResponse.data.access_token;
     const itemId = exchangeResponse.data.item_id;
-    console.log("Received access token and item ID");
 
     // Insert the linked account with the access token
-    console.log("Inserting linked account into database");
-    const { data, error } = await supabase.from("linkedAccounts").insert([
+    const { error } = await supabase.from("linkedAccounts").insert([
       {
         accessToken,
         itemId,
@@ -112,14 +103,11 @@ export const action: ActionFunction = async ({ request }) => {
       },
     ]);
 
-    console.log("Insertion result:", data);
-
     if (error) {
       console.error("Error saving linked account:", error);
       return json({ error: error.message }, { headers });
     }
 
-    console.log("Account linked successfully, redirecting");
     return redirect("/linked-accounts");
   } catch (error) {
     console.error("Error exchanging public token:", error);
@@ -166,7 +154,7 @@ export default function LinkedAccounts() {
         <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
           Linked Accounts
         </h1>
-        {linkToken && (
+        {linkedAccounts && linkedAccounts.length > 0 && linkToken && (
           <PlaidLinkButton
             token={linkToken}
             onSuccess={handlePlaidSuccess}

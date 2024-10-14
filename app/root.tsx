@@ -1,11 +1,10 @@
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
+  // useLoaderData,
 } from "@remix-run/react";
 import { redirect, json } from "@netlify/remix-runtime";
 import type {
@@ -71,8 +70,7 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export default function App() {
-  const { user } = useLoaderData<typeof loader>();
-  console.log(user);
+  // const { user } = useLoaderData<typeof loader>();
 
   // useEffect(() => {
   //   const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -98,7 +96,6 @@ export default function App() {
         <Outlet />
         <ScrollRestoration />
         <Scripts />
-        <LiveReload />
       </body>
     </html>
   );

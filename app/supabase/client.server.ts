@@ -11,8 +11,6 @@ export async function createSupabaseServerClient(
   request: Request,
   headers: Headers
 ) {
-  console.log("Creating Supabase server client");
-  console.log("supabaseUrl", supabaseUrl);
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {

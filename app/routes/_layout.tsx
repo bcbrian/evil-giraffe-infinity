@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Outlet, Link } from "@remix-run/react";
 import {
   Menu,
@@ -19,42 +19,48 @@ export default function Layout() {
   const [renderedContent, setRenderedContent] =
     useState<React.ReactNode | null>(null);
 
-  const menuItems = [
-    { icon: Home, label: "Home", to: "/" },
-    { icon: PieChart, label: "Stats", to: "/budgets" },
-    { icon: Grid, label: "Transactions", to: "/transactions" },
-    { icon: Bell, label: "Notifications", to: "/manage" },
-    { icon: User, label: "Profile", to: "/linked-accounts" },
-    { icon: LogOut, label: "Logout", to: "/logout" },
-    {
-      icon: isDarkMode ? Sun : Moon,
-      label: "Toggle Theme",
-      onClick: () => {
-        setIsDarkMode(!isDarkMode);
-      },
-    },
-  ];
-
-  const buttonVariants = {
-    hidden: { scale: 0, opacity: 0, y: 0, x: 0 },
-    visible: (index: number) => {
-      const angle = (index - (menuItems.length - 1) / 2) * 40;
-      const radius = 100;
-      const x = Math.sin((angle * Math.PI) / 180) * radius;
-      const y = -Math.cos((angle * Math.PI) / 180) * radius;
-      return {
-        scale: 1,
-        opacity: 1,
-        x,
-        y,
-        transition: {
-          type: "spring",
-          stiffness: 260,
-          damping: 20,
+  const menuItems = useMemo(
+    () => [
+      { icon: Home, label: "Home", to: "/" },
+      { icon: PieChart, label: "Stats", to: "/budgets" },
+      { icon: Grid, label: "Transactions", to: "/transactions" },
+      { icon: Bell, label: "Notifications", to: "/manage" },
+      { icon: User, label: "Profile", to: "/linked-accounts" },
+      { icon: LogOut, label: "Logout", to: "/logout" },
+      {
+        icon: isDarkMode ? Sun : Moon,
+        label: "Toggle Theme",
+        onClick: () => {
+          setIsDarkMode(!isDarkMode);
         },
-      };
-    },
-  };
+      },
+    ],
+    [isDarkMode]
+  ); // Empty dependency array means this will only be created once
+
+  const buttonVariants = useMemo(
+    () => ({
+      hidden: { scale: 0, opacity: 0, y: 0, x: 0 },
+      visible: (index: number) => {
+        const angle = (index - (menuItems.length - 1) / 2) * 40;
+        const radius = 100;
+        const x = Math.sin((angle * Math.PI) / 180) * radius;
+        const y = -Math.cos((angle * Math.PI) / 180) * radius;
+        return {
+          scale: 1,
+          opacity: 1,
+          x,
+          y,
+          transition: {
+            type: "spring",
+            stiffness: 260,
+            damping: 20,
+          },
+        };
+      },
+    }),
+    []
+  ); // Empty dependency array means this will only be created once
 
   useEffect(() => {
     setRenderedContent(

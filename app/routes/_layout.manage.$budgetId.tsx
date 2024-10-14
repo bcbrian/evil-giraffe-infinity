@@ -122,18 +122,13 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 };
 
 export const action: ActionFunction = async ({ request, params }) => {
-  console.log("Action function started");
-
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log("User data:", JSON.stringify(user));
-
   if (!user) {
-    console.log("Unauthorized: No user found");
     return json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -142,11 +137,6 @@ export const action: ActionFunction = async ({ request, params }) => {
   const categoryName = formData.get("categoryName") as string;
   const assigned = formData.get("assigned") === "true";
 
-  console.log(
-    "Action parameters:",
-    JSON.stringify({ budgetId, categoryName, assigned })
-  );
-
   // Fetch the current budget
   const { data: budget, error: budgetError } = await supabase
     .from("budgets")
@@ -154,11 +144,7 @@ export const action: ActionFunction = async ({ request, params }) => {
     .eq("id", budgetId)
     .single();
 
-  console.log("Fetched budget:", JSON.stringify(budget));
-  console.log("Budget fetch error:", JSON.stringify(budgetError));
-
   if (budgetError) {
-    console.log("Failed to fetch budget");
     return json({ error: "Failed to fetch budget" }, { status: 500 });
   }
 
@@ -166,47 +152,26 @@ export const action: ActionFunction = async ({ request, params }) => {
     ? budget.categories
     : [];
 
-  console.log("Initial categories:", JSON.stringify(updatedCategories));
-
   if (assigned) {
     // Add the category if it's not already in the array
     if (!updatedCategories.includes(categoryName)) {
       updatedCategories.push(categoryName);
-      console.log("Category added:", categoryName);
-    } else {
-      console.log("Category already exists:", categoryName);
     }
   } else {
     // Remove the category if it's in the array
     updatedCategories = updatedCategories.filter((cat) => cat !== categoryName);
-    console.log("Category removed:", categoryName);
   }
 
-  console.log("Updated categories:", JSON.stringify(updatedCategories));
-
   // Update the budget with the new categories
-  const { data: updatedBudget, error: updateError } = await supabase
+  const { error: updateError } = await supabase
     .from("budgets")
     .update({ categories: updatedCategories })
     .eq("id", budgetId);
 
-  console.log("Updated budget:", JSON.stringify(updatedBudget));
-  console.log("Update error:", JSON.stringify(updateError));
-
   if (updateError) {
-    console.log("Failed to update budget");
     return json({ error: "Failed to update budget" }, { status: 500 });
   }
 
-  const { data: actualBudget } = await supabase
-    .from("budgets")
-    .select("*")
-    .eq("id", budgetId)
-    .single();
-
-  console.log("Actual budget:", JSON.stringify(actualBudget));
-
-  console.log("Budget updated successfully");
   return json({ success: true, categories: updatedCategories });
 };
 

@@ -7,9 +7,10 @@ import {
   CountryCode,
   Products,
 } from "plaid";
+import { createSupabaseServerClient } from "~/supabase/client.server";
 
 const configuration = new Configuration({
-  basePath: PlaidEnvironments.sandbox, // or 'development', 'production'
+  basePath: PlaidEnvironments.production, // or 'development', 'production'
   baseOptions: {
     headers: {
       "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID,
@@ -20,25 +21,33 @@ const configuration = new Configuration({
 
 const client = new PlaidApi(configuration);
 
-export const loader: LoaderFunction = async () => {
-  console.log("Starting link token creation process");
+export const loader: LoaderFunction = async ({ request }) => {
+  const headers = new Headers();
+  const supabase = await createSupabaseServerClient(request, headers);
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = user.id;
+
   try {
-    console.log("Attempting to create link token with Plaid API");
     const response = await client.linkTokenCreate({
-      user: { client_user_id: "unique-user-id" },
-      client_name: "Your App Name",
+      user: { client_user_id: userId },
+      client_name: "Evil Giraffe",
       language: "en",
       country_codes: [CountryCode.Us],
-      products: [Products.Auth, Products.Transactions],
-      // ... other required fields
+      products: [Products.Transactions],
     });
 
-    console.log("Link token created successfully:", response.data.link_token);
-    // Return the response as JSON
     return json({ linkToken: response.data.link_token });
   } catch (error) {
     console.error("Error creating link token:", error);
-    // Handle error and return an appropriate response
     return json({ error: "Failed to create link token" }, { status: 500 });
   }
 };
