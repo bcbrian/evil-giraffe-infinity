@@ -28,6 +28,20 @@ export const action: ActionFunction = async ({ request }) => {
   if (email === null) {
     throw new Error("Email is required");
   }
+
+  // Get the allowed emails from the environment variable
+  const allowedEmails = process.env.ALLOWED_EMAILS?.split(",") || [];
+
+  console.log("Allowed emails:", allowedEmails);
+  console.log("Email:", email);
+  // Check if the email is in the allowed list
+  if (!allowedEmails.includes(email)) {
+    console.log("Email not in allowed list");
+    // If not, redirect to the sign-up page
+    return redirect("/signup");
+  }
+  console.log("Email in allowed list");
+
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
 
@@ -70,7 +84,7 @@ export default function Login() {
               type="email"
               required
               className="w-full bg-purple-950 border border-purple-500 text-purple-100 placeholder-purple-400 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-600"
-              placeholder="gamer@evilgiraffe.com"
+              placeholder="gamer@evilgiraffe.xyz"
             />
           </div>
           <button

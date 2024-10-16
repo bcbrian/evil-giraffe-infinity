@@ -36,7 +36,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   // Fetch transactions for the current month
   const { data: transactions, error: transactionsError } = await supabase
     .from("transactions")
-    .select("amount")
+    .select("amount, category")
     .eq("owner", user.id)
     .gte("date", firstDayOfMonth.toISOString())
     .lte("date", lastDayOfMonth.toISOString());
@@ -53,7 +53,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   // Fetch all budgets
   const { data: budgets, error: budgetsError } = await supabase
     .from("budgets")
-    .select("amount")
+    .select("amount, categories")
     .eq("owner", user.id);
 
   if (budgetsError) {
@@ -65,11 +65,20 @@ export const loader: LoaderFunction = async ({ request }) => {
     });
   }
 
-  const totalTransactions = transactions.reduce(
-    (sum, transaction) => sum + transaction.amount,
-    0
-  );
   const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
+
+  // Get all categories from all budgets
+  const allBudgetCategories = budgets.flatMap(
+    (budget) => budget.categories || []
+  );
+
+  // Filter transactions that belong to budget categories and sum them up
+  const totalTransactions = transactions.reduce((sum, transaction) => {
+    if (allBudgetCategories.includes(transaction.category)) {
+      return sum + transaction.amount;
+    }
+    return sum;
+  }, 0);
 
   const remainingAmount = Math.max(totalBudget - totalTransactions, 0);
   const budgetPercentage = Math.min(
