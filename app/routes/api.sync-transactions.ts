@@ -1,6 +1,7 @@
 import { ActionFunction, json } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
-import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
+import { Configuration, PlaidApi, PlaidEnvironments, Transaction } from "plaid";
+import { subMonths, startOfMonth, endOfMonth, format } from "date-fns";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.production,
@@ -41,21 +42,38 @@ export const action: ActionFunction = async ({ request }) => {
     const accessToken = accountData.accessToken;
 
     const now = new Date();
-    const startDate = new Date(now.setDate(now.getDate() - 30))
-      .toISOString()
-      .split("T")[0];
-    const endDate = new Date().toISOString().split("T")[0];
+    const startDate = format(startOfMonth(subMonths(now, 2)), "yyyy-MM-dd");
+    const endDate = format(endOfMonth(now), "yyyy-MM-dd");
 
-    const transactionsResponse = await plaidClient.transactionsGet({
-      access_token: accessToken,
-      start_date: startDate,
-      end_date: endDate,
-    });
+    let allTransactions: Transaction[] = [];
+    let hasMore = true;
+    let offset = 0;
 
-    const transactions = transactionsResponse.data.transactions;
+    while (hasMore) {
+      const transactionsResponse = await plaidClient.transactionsGet({
+        access_token: accessToken,
+        start_date: startDate,
+        end_date: endDate,
+        options: {
+          count: 100,
+          offset: offset,
+        },
+      });
+
+      const { data } = transactionsResponse;
+      const { transactions, total_transactions } = data;
+
+      allTransactions = [...allTransactions, ...transactions];
+      offset += transactions.length;
+      hasMore = offset < total_transactions;
+
+      console.log(
+        `Fetched ${transactions.length} transactions. Total: ${allTransactions.length}/${total_transactions}`
+      );
+    }
 
     const { error: upsertError } = await supabase.from("transactions").upsert(
-      transactions.map((transaction) => ({
+      allTransactions.map((transaction) => ({
         id: transaction.transaction_id,
         accountId,
         pending: transaction.pending,
@@ -63,7 +81,7 @@ export const action: ActionFunction = async ({ request }) => {
         amount: transaction.amount,
         date: transaction.date,
         name: transaction.name,
-        category: transaction.personal_finance_category?.primary,
+        category: transaction.personal_finance_category?.detailed,
         owner: user?.user?.id ?? null,
       })),
       { onConflict: "id" }

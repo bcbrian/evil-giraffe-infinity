@@ -143,6 +143,8 @@ export default function LinkedAccounts() {
     );
   };
 
+  const isSyncing = fetcher.state === "submitting";
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -192,10 +194,32 @@ export default function LinkedAccounts() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleSync(account.id)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300 ease-in-out flex items-center"
+                    disabled={isSyncing}
+                    className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300 ease-in-out flex items-center ${
+                      isSyncing ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
-                    <Refresh size={16} className="mr-2" />
-                    Sync
+                    {isSyncing ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                          className="mr-2"
+                        >
+                          <Refresh size={16} />
+                        </motion.div>
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <Refresh size={16} className="mr-2" />
+                        Sync
+                      </>
+                    )}
                   </motion.button>
                 </div>
                 {account.metadata.accounts &&

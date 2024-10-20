@@ -96,3 +96,8 @@ Refer to Remix’s official documentation for best practices in Routes, Loaders,
 - Use tailwind for visual ui styles
 
 - try to match designs in images
+
+**Next js**
+
+- We are using remix, not next.js
+- next js might have similar solutions but we need to prioritize remix
