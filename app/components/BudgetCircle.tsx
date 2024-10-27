@@ -1,26 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AlertTriangle } from "lucide-react";
 
 interface BudgetCircleProps {
   percentage: number;
   amount: number;
   daysLeft: number;
-  backgroundColor: string;
-  startColor: string;
-  endColor: string;
-  textColor: string;
-  strokeColor: string;
 }
 
 export function BudgetCircle({
   percentage,
   amount,
   daysLeft,
-  backgroundColor,
-  startColor,
-  endColor,
-  textColor,
-  strokeColor,
 }: BudgetCircleProps) {
   const [showPercentage, setShowPercentage] = useState(true);
 
@@ -34,61 +25,40 @@ export function BudgetCircle({
   const slideVariants = {
     enter: (direction: number) => {
       return {
-        x: direction > 0 ? 100 : -100,
+        y: direction > 0 ? 20 : -20,
         opacity: 0,
       };
     },
     center: {
       zIndex: 1,
-      x: 0,
+      y: 0,
       opacity: 1,
     },
     exit: (direction: number) => {
       return {
         zIndex: 0,
-        x: direction < 0 ? 100 : -100,
+        y: direction < 0 ? 20 : -20,
         opacity: 0,
       };
     },
   };
 
   const getColor = (percentage: number) => {
-    const startRGB = hexToRgb(startColor);
-    const endRGB = hexToRgb(endColor);
-
-    if (!startRGB || !endRGB) return startColor; // Fallback to start color if conversion fails
-
-    const r = Math.round(
-      startRGB.r + (endRGB.r - startRGB.r) * (percentage / 100)
-    );
-    const g = Math.round(
-      startRGB.g + (endRGB.g - startRGB.g) * (percentage / 100)
-    );
-    const b = Math.round(
-      startRGB.b + (endRGB.b - startRGB.b) * (percentage / 100)
-    );
-
-    return `rgb(${r}, ${g}, ${b})`;
-  };
-
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
-        }
-      : null;
+    if (percentage <= 50) return "rgb(74, 222, 128)"; // green-400
+    if (percentage <= 75) return "rgb(250, 204, 21)"; // yellow-400
+    if (percentage <= 100) return "rgb(248, 113, 113)"; // red-400
+    return "rgb(239, 68, 68)"; // red-500
   };
 
   const fillColor = getColor(percentage);
+
+  const isOverBudget = percentage > 100;
 
   return (
     <div className="relative w-64 h-64 mb-8">
       <svg className="w-full h-full" viewBox="0 0 100 100">
         <circle
-          className={backgroundColor}
+          className="text-purple-900"
           strokeWidth="8"
           stroke="currentColor"
           fill="transparent"
@@ -97,7 +67,7 @@ export function BudgetCircle({
           cy="50"
         />
         <circle
-          className={percentage > 75 ? "strobe" : ""}
+          className={isOverBudget ? "animate-pulse" : ""}
           stroke={fillColor}
           strokeWidth="8"
           strokeLinecap="round"
@@ -106,12 +76,12 @@ export function BudgetCircle({
           cx="50"
           cy="50"
           strokeDasharray="276.46"
-          strokeDashoffset={276.46 * (1 - percentage / 100)}
+          strokeDashoffset={276.46 * (1 - Math.min(percentage, 100) / 100)}
           transform="rotate(-90 50 50)"
         />
       </svg>
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center w-full">
-        <div className="relative h-12 overflow-hidden">
+        <div className="relative h-16 overflow-hidden">
           <AnimatePresence initial={false} custom={showPercentage ? 1 : -1}>
             <motion.div
               key={showPercentage ? "percentage" : "amount"}
@@ -121,25 +91,39 @@ export function BudgetCircle({
               animate="center"
               exit="exit"
               transition={{
-                x: { type: "spring", stiffness: 300, damping: 30 },
+                y: { type: "spring", stiffness: 300, damping: 30 },
                 opacity: { duration: 0.2 },
               }}
               className="absolute w-full"
             >
               {showPercentage ? (
-                <div className={`text-4xl font-bold ${textColor}`}>
+                <div className="text-4xl font-bold text-purple-100">
                   {percentage}%
                 </div>
               ) : (
-                <div className={`text-4xl font-bold ${textColor}`}>
+                <div className="text-4xl font-bold text-purple-100">
                   ${amount.toFixed(2)}
                 </div>
               )}
             </motion.div>
           </AnimatePresence>
         </div>
-        <div className={`text-xl ${strokeColor}`}>{daysLeft} days left</div>
+        <div className="text-xl text-purple-300">{daysLeft} days left</div>
       </div>
+      {isOverBudget && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 260,
+            damping: 20,
+          }}
+          className="absolute -top-4 -right-4 bg-red-500 rounded-full p-2 shadow-lg"
+        >
+          <AlertTriangle className="text-white" size={24} />
+        </motion.div>
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import type { LoaderFunction } from "@netlify/remix-runtime";
 import { redirect, json } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { motion } from "framer-motion";
-import { PlusCircle, DollarSign } from "lucide-react";
+import { PlusCircle, DollarSign, AlertTriangle } from "lucide-react";
 
 interface Budget {
   id: string;
@@ -123,38 +123,82 @@ export default function Budgets() {
         </Link>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {budgets.map((budget: Budget) => (
-          <motion.div
-            key={budget.id}
-            whileHover={{ scale: 1.03 }}
-            className="bg-black bg-opacity-50 p-6 rounded-lg shadow-lg"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-purple-300">
-                {budget.name}
-              </h2>
-              <div className="flex items-center text-lg font-semibold text-purple-200">
-                <DollarSign size={20} className="mr-1" />
-                {budget.amount.toFixed(2)}
-              </div>
-            </div>
-            <div className="w-full bg-purple-900 rounded-full h-4 mb-2">
+        {budgets.map((budget: Budget) => {
+          const percentSpent = (budget.spent / budget.amount) * 100;
+          const isOverBudget = percentSpent > 100;
+          const linePosition = isOverBudget
+            ? (budget.amount / budget.spent) * 100
+            : 100;
+
+          return (
+            <Link key={budget.id} to={`/manage/${budget.id}`}>
               <motion.div
-                className="bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full"
-                style={{ width: `${(budget.spent / budget.amount) * 100}%` }}
-                initial={{ width: 0 }}
-                animate={{ width: `${(budget.spent / budget.amount) * 100}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              />
-            </div>
-            <div className="flex justify-between text-sm text-purple-300">
-              <span>Spent: ${budget.spent.toFixed(2)}</span>
-              <span>
-                Remaining: ${(budget.amount - budget.spent).toFixed(2)}
-              </span>
-            </div>
-          </motion.div>
-        ))}
+                whileHover={{ scale: 1.03 }}
+                className="bg-black bg-opacity-50 p-6 rounded-lg shadow-lg relative cursor-pointer transition-all duration-300 ease-in-out hover:shadow-purple-500/30"
+              >
+                {isOverBudget && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
+                  >
+                    <AlertTriangle size={20} />
+                  </motion.div>
+                )}
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-purple-300">
+                    {budget.name}
+                  </h2>
+                  <div className="flex items-center text-lg font-semibold text-purple-200">
+                    <DollarSign size={20} className="mr-1" />
+                    {budget.amount.toFixed(2)}
+                  </div>
+                </div>
+                <div className="w-full bg-purple-900 rounded-full h-4 mb-2 relative overflow-hidden">
+                  <div
+                    className="h-4 rounded-full"
+                    style={{
+                      background: isOverBudget
+                        ? `linear-gradient(to right, 
+                            #4ade80 0%, 
+                            #3b82f6 ${linePosition / 2}%, 
+                            #ef4444 ${linePosition}%, 
+                            #ef4444 100%)`
+                        : `linear-gradient(to right, 
+                            #4ade80 0%, 
+                            #3b82f6 100%)`,
+                      width: `${Math.min(percentSpent, 100)}%`,
+                      transition: "width 1s ease-out, background 1s ease-out",
+                    }}
+                  />
+                  {isOverBudget && (
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-white"
+                      style={{
+                        left: `${linePosition}%`,
+                        transition: "left 1s ease-out",
+                      }}
+                    />
+                  )}
+                </div>
+                <div className="flex justify-between text-sm text-purple-300">
+                  <span>Spent: ${budget.spent.toFixed(2)}</span>
+                  <span>
+                    {isOverBudget ? (
+                      <span className="text-red-400">
+                        Over by: ${(budget.spent - budget.amount).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span>
+                        Remaining: ${(budget.amount - budget.spent).toFixed(2)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </motion.div>
+            </Link>
+          );
+        })}
       </div>
     </motion.div>
   );

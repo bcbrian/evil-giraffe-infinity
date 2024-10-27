@@ -84,15 +84,15 @@ export default function Layout() {
         </main>
 
         {/* Floating menu button */}
-        <div className="fixed bottom-10 left-0 right-0 flex justify-center">
-          <div className="relative w-64 h-32 flex items-end justify-center">
+        <div className="fixed bottom-10 left-0 right-0 flex justify-center pointer-events-none">
+          <div className="relative flex items-end justify-center">
             <motion.button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`${
                 isDarkMode
                   ? "bg-purple-600 hover:bg-purple-700"
                   : "bg-purple-500 hover:bg-purple-600"
-              } text-white rounded-full p-4 transition-colors duration-200 z-10 shadow-lg shadow-purple-500/50`}
+              } text-white rounded-full p-4 transition-colors duration-200 z-10 shadow-lg shadow-purple-500/50 pointer-events-auto`}
               whileTap={{ scale: 0.95 }}
             >
               <Menu size={24} />
@@ -108,7 +108,7 @@ export default function Layout() {
                         isDarkMode
                           ? "bg-purple-800 hover:bg-purple-700"
                           : "bg-purple-200 hover:bg-purple-300"
-                      } rounded-full p-3 transition-colors duration-200 shadow-md`}
+                      } rounded-full p-3 transition-colors duration-200 shadow-md pointer-events-auto`}
                       variants={buttonVariants}
                       initial="hidden"
                       animate="visible"
@@ -136,7 +136,7 @@ export default function Layout() {
                         isDarkMode
                           ? "bg-purple-800 hover:bg-purple-700"
                           : "bg-purple-200 hover:bg-purple-300"
-                      } rounded-full p-3 transition-colors duration-200 shadow-md`}
+                      } rounded-full p-3 transition-colors duration-200 shadow-md pointer-events-auto`}
                       variants={buttonVariants}
                       initial="hidden"
                       animate="visible"

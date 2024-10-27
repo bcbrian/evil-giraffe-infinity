@@ -66,24 +66,29 @@ export const action: ActionFunction = async ({ request }) => {
       allTransactions = [...allTransactions, ...transactions];
       offset += transactions.length;
       hasMore = offset < total_transactions;
-
-      console.log(
-        `Fetched ${transactions.length} transactions. Total: ${allTransactions.length}/${total_transactions}`
-      );
     }
 
+    console.log(JSON.stringify(allTransactions[0], null, 2));
     const { error: upsertError } = await supabase.from("transactions").upsert(
-      allTransactions.map((transaction) => ({
-        id: transaction.transaction_id,
-        accountId,
-        pending: transaction.pending,
-        plaidTransactionId: transaction.transaction_id,
-        amount: transaction.amount,
-        date: transaction.date,
-        name: transaction.name,
-        category: transaction.personal_finance_category?.detailed,
-        owner: user?.user?.id ?? null,
-      })),
+      allTransactions.map((transaction) => {
+        const mainCategory =
+          transaction.personal_finance_category?.primary ?? null;
+        const subCategory =
+          transaction.personal_finance_category?.detailed ?? null;
+        return {
+          id: transaction.transaction_id,
+          accountId,
+          pending: transaction.pending,
+          plaidTransactionId: transaction.transaction_id,
+          amount: transaction.amount,
+          date: transaction.date,
+          name: transaction.name,
+          mainCategory,
+          subCategory,
+          merchantName: transaction.merchant_name ?? transaction.name,
+          owner: user?.user?.id ?? null,
+        };
+      }),
       { onConflict: "id" }
     );
 

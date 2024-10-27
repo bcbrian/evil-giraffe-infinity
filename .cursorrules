@@ -101,3 +101,7 @@ Refer to Remix’s official documentation for best practices in Routes, Loaders,
 
 - We are using remix, not next.js
 - next js might have similar solutions but we need to prioritize remix
+
+**How to work with me**
+
+- when you are suggesting a change do not show me where the change is and then show me what the change is just show me the change so i can apply it, review it and accept or reject. when you show me what we are changing then show me what we are changing it to. it cost to many cyles and is slowing us down and you are loosing context and making more mistake because you are generating more tokens than nesecary.

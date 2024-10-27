@@ -123,7 +123,12 @@ export default function Manage() {
       <div className="space-y-4 mt-6">
         {budgets.map((budget) => {
           const usage = calculateBudgetUsage(budget);
-          const percentage = Math.min((usage / budget.amount) * 100, 100);
+          const percentSpent = (usage / budget.amount) * 100;
+          const isOverBudget = percentSpent > 100;
+          const linePosition = isOverBudget
+            ? (budget.amount / usage) * 100
+            : 100;
+
           return (
             <motion.div
               key={budget.id}
@@ -143,14 +148,35 @@ export default function Manage() {
                     {budget.amount}
                   </span>
                 </div>
-                <div className="w-full bg-purple-900 rounded-full h-2.5 mb-2">
+                <div className="w-full bg-purple-900 rounded-full h-2.5 mb-2 relative overflow-hidden">
                   <motion.div
-                    className="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full"
-                    style={{ width: `${percentage}%` }}
+                    className="h-2.5 rounded-full"
+                    style={{
+                      background: isOverBudget
+                        ? `linear-gradient(to right, 
+                            #4ade80 0%, 
+                            #3b82f6 ${linePosition / 2}%, 
+                            #ef4444 ${linePosition}%, 
+                            #ef4444 100%)`
+                        : `linear-gradient(to right, 
+                            #4ade80 0%, 
+                            #3b82f6 100%)`,
+                      width: `${Math.min(percentSpent, 100)}%`,
+                      transition: "width 1s ease-out, background 1s ease-out",
+                    }}
                     initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
+                    animate={{ width: `${Math.min(percentSpent, 100)}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
-                  ></motion.div>
+                  />
+                  {isOverBudget && (
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-white"
+                      style={{
+                        left: `${linePosition}%`,
+                        transition: "left 1s ease-out",
+                      }}
+                    />
+                  )}
                 </div>
                 <div className="text-sm text-purple-300 flex justify-between items-center">
                   <span>
@@ -175,7 +201,6 @@ export default function Manage() {
       >
         Manage Budgets
       </Link>
-
       {unassignedCategories.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -198,7 +223,7 @@ export default function Manage() {
             ))}
           </ul>
         </motion.div>
-      )}
+      )}{" "}
     </motion.div>
   );
 }
