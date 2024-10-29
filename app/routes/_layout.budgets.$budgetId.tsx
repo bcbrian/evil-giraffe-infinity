@@ -1,4 +1,9 @@
-import { json, LoaderFunction, ActionFunction } from "@netlify/remix-runtime";
+import {
+  json,
+  LoaderFunction,
+  ActionFunction,
+  redirect,
+} from "@netlify/remix-runtime";
 import {
   useLoaderData,
   useActionData,
@@ -20,6 +25,7 @@ import {
   X,
   Loader2,
   ChevronDown,
+  Trash,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
@@ -224,6 +230,18 @@ export const action: ActionFunction = async ({ request, params }) => {
         currentSpent: updatedCurrentSpent,
       });
     }
+    case "deleteBudget": {
+      const budgetId = Number(formData.get("budgetId") as string);
+      const { error: deleteError } = await supabase
+        .from("budgets")
+        .delete()
+        .eq("id", budgetId);
+
+      if (deleteError) {
+        return json({ error: "Failed to delete budget" }, { status: 500 });
+      }
+      return redirect("/budgets");
+    }
     default:
       return json({ error: "Invalid intent" }, { status: 400 });
   }
@@ -248,6 +266,7 @@ export default function ManageBudget() {
     Record<string, boolean>
   >({});
   const [categories, setCategories] = useState(initialCategories);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (actionData?.categories) {
@@ -263,7 +282,7 @@ export default function ManageBudget() {
 
   const handleCategoryClick = (
     categoryId: string,
-    currentlyAssigned: boolean
+    currentlyAssigned: boolean | null
   ) => {
     const [main, sub, merchant] = categoryId.split(":");
     const newAssignmentState = !currentlyAssigned;
@@ -277,17 +296,18 @@ export default function ManageBudget() {
     if (!sub) {
       // Main category
       const mainCategory = categories.find(
-        (c: Category) => c.id === categoryId
+        (c: Category<MerchantName>) => c.id === categoryId
       );
       if (mainCategory) {
         const allMerchantIds = mainCategory.subCategories.flatMap(
-          (sub: SubCategory) => sub.merchantNames.map((m: MerchantName) => m.id)
+          (sub: SubCategory<MerchantName>) =>
+            sub.merchantNames.map((m: MerchantName) => m.id)
         );
 
         if (newAssignmentState) {
           changes.additions = allMerchantIds.filter((id: string) => {
-            return !categories.some((c: Category) =>
-              c.subCategories.some((s: SubCategory) =>
+            return !categories.some((c: Category<MerchantName>) =>
+              c.subCategories.some((s: SubCategory<MerchantName>) =>
                 s.merchantNames.some(
                   (m: MerchantName) => m.id === id && m.assigned
                 )
@@ -300,9 +320,11 @@ export default function ManageBudget() {
       }
     } else if (!merchant) {
       // Sub-category
-      const mainCategory = categories.find((c: Category) => c.id === main);
+      const mainCategory = categories.find(
+        (c: Category<MerchantName>) => c.id === main
+      );
       const subCategory = mainCategory?.subCategories.find(
-        (s: SubCategory) => s.id === categoryId
+        (s: SubCategory<MerchantName>) => s.id === categoryId
       );
       if (subCategory) {
         const merchantIds = subCategory.merchantNames
@@ -403,8 +425,8 @@ export default function ManageBudget() {
   };
 
   const renderCheckbox = (
-    assigned: boolean,
-    partiallyAssigned: boolean = false,
+    assigned: boolean | null,
+    partiallyAssigned: boolean | null = false,
     disabled: boolean = false
   ) => {
     if (partiallyAssigned) {
@@ -441,6 +463,23 @@ export default function ManageBudget() {
     );
   };
 
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    // Call the action to delete the budget
+    await fetcher.submit(
+      { intent: "deleteBudget", budgetId: budget.id },
+      { method: "post" }
+    );
+    setShowDeleteModal(false);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -449,14 +488,43 @@ export default function ManageBudget() {
       className="p-6 bg-gradient-to-br from-purple-900 to-indigo-900 min-h-screen text-purple-100"
     >
       <Link
-        to="/manage"
-        className="inline-block mb-6 text-purple-300 hover:text-purple-100 transition-colors duration-200"
+        to="/budgets"
+        className="text-purple-300 hover:text-purple-100 transition-colors duration-200"
       >
-        ← Back to Budgets
+        <ChevronLeft size={20} />
       </Link>
-      <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+      <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 flex justify-between items-center">
         {budget.name}
+        <button
+          onClick={handleDeleteClick}
+          className="text-red-500 hover:text-red-700 transition-colors duration-200"
+        >
+          <Trash size={24} />
+        </button>
       </h1>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 dark:bg-opacity-75">
+          <div className="bg-white dark:bg-gray-800 text-black dark:text-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Confirm Deletion</h2>
+            <p className="mb-4">Are you sure you want to delete this budget?</p>
+            <div className="flex justify-end">
+              <button
+                onClick={handleDeleteCancel}
+                className="bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded mr-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="bg-red-500 text-white px-4 py-2 rounded"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Month selector */}
       <div className="mb-6 flex justify-between items-center bg-black bg-opacity-50 p-4 rounded-lg shadow-lg">
@@ -599,7 +667,7 @@ export default function ManageBudget() {
         className="space-y-3"
       >
         <AnimatePresence>
-          {categories.map((mainCategory: Category) => (
+          {categories.map((mainCategory: Category<MerchantName>) => (
             <motion.div
               key={mainCategory.id}
               initial={{ opacity: 0, y: 20 }}

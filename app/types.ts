@@ -1,21 +1,21 @@
-export interface Category {
+export interface Category<T> {
   id: string;
   name: string;
   displayName: string;
-  assigned: boolean;
-  partiallyAssigned: boolean;
+  assigned: boolean | null;
+  partiallyAssigned: boolean | null;
   assignedBudgets: { id: number; name: string }[];
-  subCategories: SubCategory[];
+  subCategories: SubCategory<T>[];
 }
 
-export interface SubCategory {
+export interface SubCategory<T> {
   id: string;
   name: string;
   displayName: string;
-  assigned: boolean;
-  partiallyAssigned: boolean;
+  assigned: boolean | null;
+  partiallyAssigned: boolean | null;
   assignedBudgets: { id: number; name: string }[];
-  merchantNames: MerchantName[];
+  merchantNames: T[];
 }
 
 export interface MerchantName {
@@ -26,7 +26,14 @@ export interface MerchantName {
   assigned: boolean;
   assignedBudgets: { id: number; name: string }[];
 }
-
+export interface MerchantNameAlt {
+  id: string;
+  name: string;
+  displayName: string;
+  assignedOtherBudget: boolean | null;
+  assigned: boolean | null;
+  assignedBudgets: { id: number; name: string }[];
+}
 export interface Transaction {
   id: number;
   amount: number;

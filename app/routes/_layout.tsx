@@ -4,7 +4,6 @@ import {
   Menu,
   Home,
   PieChart,
-  Bell,
   User,
   Sun,
   Moon,
@@ -24,7 +23,6 @@ export default function Layout() {
       { icon: Home, label: "Home", to: "/" },
       { icon: PieChart, label: "Stats", to: "/budgets" },
       { icon: Grid, label: "Transactions", to: "/transactions" },
-      { icon: Bell, label: "Notifications", to: "/manage" },
       { icon: User, label: "Profile", to: "/linked-accounts" },
       { icon: LogOut, label: "Logout", to: "/logout" },
       {

@@ -1,4 +1,4 @@
-import { Transaction } from "~/types";
+import { Category, MerchantName, MerchantNameAlt, Transaction } from "~/types";
 
 export const createCategoryId = (
   main: string,
@@ -12,11 +12,23 @@ export const buildCategoriesWithAssignment = (
   transactions: Transaction[],
   allBudgets: { id: number; name: string; categories: string[] }[],
   currentBudgetId?: number
-) => {
+): Category<MerchantName>[] => {
   if (!currentBudgetId) {
     throw new Error("Current budget ID is required");
   }
-
+  return buildCategoryHierarchy<MerchantName>(
+    transactions,
+    allBudgets,
+    currentBudgetId
+  );
+};
+export const buildCategoryHierarchy = <
+  T extends MerchantName | MerchantNameAlt
+>(
+  transactions: Transaction[],
+  allBudgets: { id: number; name: string; categories: string[] }[],
+  currentBudgetId?: number
+): Category<T>[] => {
   const categoriesHierarchy = transactions.reduce((acc, transaction) => {
     const { mainCategory, subCategory, merchantName } = transaction;
 
@@ -64,36 +76,44 @@ export const buildCategoriesWithAssignment = (
             merchantName
           );
           const merchantAssignedBudgets = allBudgets.filter((b) =>
-            b.categories?.includes(merchantId)
+            b.categories?.some((c) => c === merchantId)
           );
 
           return {
             id: merchantId,
             name: merchantName,
             displayName: merchantName,
-            assignedOtherBudget: merchantAssignedBudgets.some(
-              (b) => b.id !== currentBudgetId
-            ),
-            assigned: merchantAssignedBudgets.some(
-              (b) => b.id === currentBudgetId
-            ),
+            assignedOtherBudget: currentBudgetId
+              ? merchantAssignedBudgets.some((b) => b.id !== currentBudgetId)
+              : null,
+            assigned: currentBudgetId
+              ? merchantAssignedBudgets.some((b) => b.id === currentBudgetId)
+              : null,
             assignedBudgets: merchantAssignedBudgets.map((b) => ({
               id: b.id,
               name: b.name,
             })),
-          };
+          } as T;
         });
-        const filteredMerchantNames = merchantNames.filter(
-          (m) => !m.assignedOtherBudget
-        );
-        const allAssigned = filteredMerchantNames.every((m) => m.assigned);
-        const someAssigned = filteredMerchantNames.some((m) => m.assigned);
+
+        const filteredMerchantNames = currentBudgetId
+          ? merchantNames.filter((m) => !m.assignedOtherBudget)
+          : merchantNames;
+        const allAssigned = currentBudgetId
+          ? filteredMerchantNames.every((m) => m.assigned)
+          : null;
+        const someAssigned = currentBudgetId
+          ? filteredMerchantNames.some((m) => m.assigned)
+          : null;
+
         return {
           id: subCategoryId,
           name: subCategory,
           displayName: subCategory.replace(/_/g, " "),
           assigned: allAssigned,
-          partiallyAssigned: !allAssigned && someAssigned,
+          partiallyAssigned: currentBudgetId
+            ? !allAssigned && someAssigned
+            : null,
           assignedBudgets: subAssignedBudgets.map((b) => ({
             id: b.id,
             name: b.name,
@@ -103,17 +123,25 @@ export const buildCategoriesWithAssignment = (
       }
     );
 
-    const allMerchants = subCategories.flatMap((sc) =>
-      sc.merchantNames.filter((m) => !m.assignedOtherBudget)
-    );
-    const allAssigned = allMerchants.every((m) => m.assigned);
-    const someAssigned = allMerchants.some((m) => m.assigned);
+    const allMerchants = currentBudgetId
+      ? subCategories.flatMap((sc) =>
+          sc.merchantNames.filter((m) => !m.assignedOtherBudget)
+        )
+      : subCategories.flatMap((sc) => sc.merchantNames);
+
+    const allAssigned = currentBudgetId
+      ? allMerchants.every((m) => m.assigned)
+      : null;
+    const someAssigned = currentBudgetId
+      ? allMerchants.some((m) => m.assigned)
+      : null;
+
     return {
       id: mainCategoryId,
       name: mainCategory,
       displayName: mainCategory.replace(/_/g, " "),
       assigned: allAssigned,
-      partiallyAssigned: !allAssigned && someAssigned,
+      partiallyAssigned: currentBudgetId ? !allAssigned && someAssigned : null,
       assignedBudgets: assignedBudgets.map((b) => ({ id: b.id, name: b.name })),
       subCategories,
     };

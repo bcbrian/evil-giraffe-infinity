@@ -4,6 +4,7 @@ import { BudgetCircle } from "~/components/BudgetCircle";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { calculateBudgetSpent } from "~/utils/categoryUtils";
 
 export const loader: LoaderFunction = async ({ request }) => {
   const headers = new Headers();
@@ -36,7 +37,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   // Fetch transactions for the current month
   const { data: transactions, error: transactionsError } = await supabase
     .from("transactions")
-    .select("amount, category")
+    .select("*")
     .eq("owner", user.id)
     .gte("date", firstDayOfMonth.toISOString())
     .lte("date", lastDayOfMonth.toISOString());
@@ -53,7 +54,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   // Fetch all budgets
   const { data: budgets, error: budgetsError } = await supabase
     .from("budgets")
-    .select("amount, categories")
+    .select("*")
     .eq("owner", user.id);
 
   if (budgetsError) {
@@ -67,17 +68,9 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
 
-  // Get all categories from all budgets
-  const allBudgetCategories = budgets.flatMap(
-    (budget) => budget.categories || []
-  );
-
-  // Filter transactions that belong to budget categories and sum them up
-  const totalTransactions = transactions.reduce((sum, transaction) => {
-    if (allBudgetCategories.includes(transaction.category)) {
-      return sum + transaction.amount;
-    }
-    return sum;
+  // Calculate total transactions using the updated logic
+  const totalTransactions = budgets.reduce((sum, budget) => {
+    return sum + calculateBudgetSpent(budget, transactions);
   }, 0);
 
   const remainingAmount = Math.max(totalBudget - totalTransactions, 0);

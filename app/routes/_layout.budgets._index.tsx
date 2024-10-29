@@ -1,24 +1,38 @@
-import { useLoaderData, Link } from "@remix-run/react";
-import type { LoaderFunction } from "@netlify/remix-runtime";
-import { redirect, json } from "@netlify/remix-runtime";
+import { json, LoaderFunction } from "@netlify/remix-runtime";
+import { useLoaderData, Link, useSearchParams } from "@remix-run/react";
 import { createSupabaseServerClient } from "~/supabase/client.server";
+import { UTCDate } from "@date-fns/utc";
+import MonthSelector from "~/components/MonthSelector";
 import { motion } from "framer-motion";
-import { PlusCircle, DollarSign, AlertTriangle } from "lucide-react";
+import {
+  DollarSign,
+  AlertTriangle,
+  ChevronRight,
+  PlusCircle,
+} from "lucide-react";
+import {
+  buildCategoryHierarchy,
+  calculateBudgetSpent,
+} from "~/utils/categoryUtils";
+import { Transaction } from "~/types";
 
 interface Budget {
   id: string;
   name: string;
   amount: number;
-  owner: string;
   categories: string[] | null;
-  spent: number;
 }
 
-interface Transaction {
-  id: string;
-  amount: number;
-  category: string;
-  date: string;
+interface LoaderData {
+  budgets: Budget[];
+  transactions: Transaction[];
+  currentMonth: string;
+  unassignedCategories: {
+    id: string;
+    name: string;
+    mainCategory: string;
+    subCategory: string;
+  }[];
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -29,18 +43,24 @@ export const loader: LoaderFunction = async ({ request }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect("/login");
+    return json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const currentDate = new Date();
-  const firstDayOfMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
+  const url = new URL(request.url);
+  const monthParam = url.searchParams.get("month");
+
+  const currentDate = monthParam
+    ? new UTCDate(monthParam)
+    : new UTCDate(new UTCDate().setUTCDate(1));
+
+  const firstDayOfMonth = new UTCDate(
+    currentDate.getUTCFullYear(),
+    currentDate.getUTCMonth(),
     1
   );
-  const lastDayOfMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
+  const lastDayOfMonth = new UTCDate(
+    currentDate.getUTCFullYear(),
+    currentDate.getUTCMonth() + 1,
     0
   );
 
@@ -57,21 +77,41 @@ export const loader: LoaderFunction = async ({ request }) => {
     .lte("date", lastDayOfMonth.toISOString());
 
   if (budgetsError || transactionsError) {
-    return json({ error: "Failed to fetch data" }, { status: 500, headers });
+    return json({ error: "Failed to fetch data" }, { status: 500 });
   }
 
-  const budgetsWithSpent = budgets.map((budget: Budget) => {
-    const spent = transactions
-      .filter((t: Transaction) => budget.categories?.includes(t.category))
-      .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
-    return { ...budget, spent };
-  });
+  const categoriesWithAssignment = buildCategoryHierarchy(
+    transactions,
+    budgets,
+    undefined // Pass undefined since we're not looking at a specific budget
+  );
 
-  return json({ budgets: budgetsWithSpent }, { headers });
+  const unassignedCategories = categoriesWithAssignment.flatMap(
+    (mainCategory) =>
+      mainCategory.subCategories.flatMap((subCategory) =>
+        subCategory.merchantNames
+          .filter((merchant) => merchant.assignedBudgets.length === 0)
+          .map((merchant) => ({
+            id: merchant.id,
+            name: merchant.displayName,
+            mainCategory: mainCategory.displayName,
+            subCategory: subCategory.displayName,
+          }))
+      )
+  );
+
+  return json({
+    budgets,
+    transactions,
+    currentMonth: currentDate.toISOString(),
+    unassignedCategories,
+  });
 };
 
 export default function Budgets() {
-  const { budgets } = useLoaderData<typeof loader>();
+  const { budgets, transactions, currentMonth, unassignedCategories } =
+    useLoaderData<LoaderData>();
+  const [, setSearchParams] = useSearchParams();
 
   if (!budgets || budgets.length === 0) {
     return (
@@ -82,7 +122,7 @@ export default function Budgets() {
         className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-purple-900 to-indigo-900 text-purple-100"
       >
         <h1 className="text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-          Budgets
+          Manage Budgets
         </h1>
         <p className="text-purple-300 mb-6">
           You don&apos;t have any budgets yet
@@ -101,6 +141,14 @@ export default function Budgets() {
     );
   }
 
+  const calculateBudgetUsage = (budget: Budget) => {
+    return calculateBudgetSpent(budget, transactions);
+  };
+
+  const handleMonthChange = (newMonth: string) => {
+    setSearchParams({ month: newMonth });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -108,9 +156,9 @@ export default function Budgets() {
       transition={{ duration: 0.5 }}
       className="p-6 bg-gradient-to-br from-purple-900 to-indigo-900 min-h-screen text-purple-100"
     >
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-          Budgets
+          Manage Budgets
         </h1>
         <Link to="/budgets/new">
           <motion.button
@@ -122,41 +170,41 @@ export default function Budgets() {
           </motion.button>
         </Link>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {budgets.map((budget: Budget) => {
-          const percentSpent = (budget.spent / budget.amount) * 100;
+      <MonthSelector
+        currentMonth={currentMonth}
+        onMonthChange={handleMonthChange}
+      />
+      <div className="space-y-4 mt-6">
+        {budgets.map((budget) => {
+          const usage = calculateBudgetUsage(budget);
+          const percentSpent = (usage / budget.amount) * 100;
           const isOverBudget = percentSpent > 100;
           const linePosition = isOverBudget
-            ? (budget.amount / budget.spent) * 100
+            ? (budget.amount / usage) * 100
             : 100;
 
           return (
-            <Link key={budget.id} to={`/manage/${budget.id}`}>
-              <motion.div
-                whileHover={{ scale: 1.03 }}
-                className="bg-black bg-opacity-50 p-6 rounded-lg shadow-lg relative cursor-pointer transition-all duration-300 ease-in-out hover:shadow-purple-500/30"
+            <motion.div
+              key={budget.id}
+              whileHover={{ scale: 1.02 }}
+              className="block bg-black bg-opacity-50 p-4 rounded-lg shadow-lg hover:shadow-purple-500/20 transition duration-300 ease-in-out"
+            >
+              <Link
+                to={`/budgets/${budget.id}?month=${currentMonth}`}
+                className="flex flex-col"
               >
-                {isOverBudget && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
-                  >
-                    <AlertTriangle size={20} />
-                  </motion.div>
-                )}
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-purple-300">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-purple-300">
                     {budget.name}
-                  </h2>
-                  <div className="flex items-center text-lg font-semibold text-purple-200">
-                    <DollarSign size={20} className="mr-1" />
-                    {budget.amount.toFixed(2)}
-                  </div>
+                  </span>
+                  <span className="text-purple-200 flex items-center">
+                    <DollarSign size={16} className="mr-1" />
+                    {budget.amount}
+                  </span>
                 </div>
-                <div className="w-full bg-purple-900 rounded-full h-4 mb-2 relative overflow-hidden">
-                  <div
-                    className="h-4 rounded-full"
+                <div className="w-full bg-purple-900 rounded-full h-2.5 mb-2 relative overflow-hidden">
+                  <motion.div
+                    className="h-2.5 rounded-full"
                     style={{
                       background: isOverBudget
                         ? `linear-gradient(to right, 
@@ -170,6 +218,9 @@ export default function Budgets() {
                       width: `${Math.min(percentSpent, 100)}%`,
                       transition: "width 1s ease-out, background 1s ease-out",
                     }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(percentSpent, 100)}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
                   />
                   {isOverBudget && (
                     <div
@@ -181,25 +232,60 @@ export default function Budgets() {
                     />
                   )}
                 </div>
-                <div className="flex justify-between text-sm text-purple-300">
-                  <span>Spent: ${budget.spent.toFixed(2)}</span>
+                <div className="text-sm text-purple-300 flex justify-between items-center">
                   <span>
+                    ${usage.toFixed(2)} / ${budget.amount}
                     {isOverBudget ? (
-                      <span className="text-red-400">
-                        Over by: ${(budget.spent - budget.amount).toFixed(2)}
+                      <span className="text-red-400 ml-2">
+                        (Over by: ${(usage - budget.amount).toFixed(2)})
                       </span>
                     ) : (
-                      <span>
-                        Remaining: ${(budget.amount - budget.spent).toFixed(2)}
+                      <span className="text-purple-300 ml-2">
+                        (Remaining: ${(budget.amount - usage).toFixed(2)})
                       </span>
                     )}
                   </span>
+                  <ChevronRight size={16} />
                 </div>
-              </motion.div>
-            </Link>
+                {(!budget.categories || budget.categories.length === 0) && (
+                  <div className="text-sm text-yellow-400 mt-1 flex items-center">
+                    <AlertTriangle size={16} className="mr-1" />
+                    No categories assigned
+                  </div>
+                )}
+              </Link>
+            </motion.div>
           );
         })}
       </div>
+      {unassignedCategories.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mt-8 bg-black bg-opacity-50 p-6 rounded-lg shadow-lg"
+        >
+          <h2 className="text-xl font-semibold mb-4 text-purple-300">
+            Unassigned Categories
+          </h2>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {unassignedCategories.map((category) => (
+              <li
+                key={category.id}
+                className="text-purple-200 bg-purple-800 bg-opacity-50 p-3 rounded-md flex flex-col"
+              >
+                <div className="flex items-center mb-1">
+                  <AlertTriangle size={16} className="mr-2 text-yellow-400" />
+                  <span className="font-semibold">{category.name}</span>
+                </div>
+                <div className="text-sm text-purple-300 ml-6">
+                  {category.mainCategory} → {category.subCategory}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      )}{" "}
     </motion.div>
   );
 }
