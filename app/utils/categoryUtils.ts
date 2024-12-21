@@ -1,4 +1,9 @@
-import { Category, MerchantName, MerchantNameAlt, Transaction } from "~/types";
+import type {
+  Category,
+  MerchantName,
+  MerchantNameAlt,
+  Transaction,
+} from "~/types";
 
 export const createCategoryId = (
   main: string,

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "react-router";
 import PlaidLinkButton from "~/components/PlaidLinkButton";
-import {
+import type {
   PlaidLinkOnSuccess,
   PlaidLinkOnSuccessMetadata,
 } from "react-plaid-link";
-import { ActionFunction, json, redirect } from "@netlify/remix-runtime";
+import { data, redirect } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
-import type { LoaderFunction } from "@netlify/remix-runtime";
+import type { Route } from "./+types/linked-accounts";
 import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -36,7 +36,7 @@ interface LinkedAccount {
   owner: string;
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
 
@@ -45,7 +45,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: "User not authenticated" }, { status: 401, headers });
+    return data({ error: "User not authenticated" }, { status: 401, headers });
   }
 
   const { data: linkedAccounts, error } = await supabase
@@ -55,7 +55,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   if (error) {
     console.error("Error fetching linked accounts:", error);
-    return json({ error: error.message }, { headers });
+    return data({ error: error.message }, { headers });
   }
 
   // Parse the metadata string to PlaidLinkOnSuccessMetadata
@@ -64,10 +64,10 @@ export const loader: LoaderFunction = async ({ request }) => {
     metadata: JSON.parse(account.metadata) as PlaidLinkOnSuccessMetadata,
   }));
 
-  return json({ linkedAccounts: parsedLinkedAccounts }, { headers });
-};
+  return data({ linkedAccounts: parsedLinkedAccounts }, { headers });
+}
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const publicToken = formData.get("public_token") as string;
   const metadata = formData.get("metadata") as string;
@@ -81,7 +81,7 @@ export const action: ActionFunction = async ({ request }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: "User not authenticated" }, { status: 401, headers });
+    return data({ error: "User not authenticated" }, { status: 401, headers });
   }
 
   // Exchange public token for access token
@@ -105,20 +105,20 @@ export const action: ActionFunction = async ({ request }) => {
 
     if (error) {
       console.error("Error saving linked account:", error);
-      return json({ error: error.message }, { headers });
+      return data({ error: error.message }, { headers });
     }
 
     return redirect("/linked-accounts");
   } catch (error) {
     console.error("Error exchanging public token:", error);
-    return json({ error: "Failed to link account" }, { status: 500, headers });
+    return data({ error: "Failed to link account" }, { status: 500, headers });
   }
-};
+}
 
-export default function LinkedAccounts() {
+export default function LinkedAccounts({ loaderData }: Route.ComponentProps) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const fetcher = useFetcher();
-  const { linkedAccounts } = useLoaderData<typeof loader>();
+  const { linkedAccounts } = loaderData;
 
   useEffect(() => {
     async function fetchLinkToken() {

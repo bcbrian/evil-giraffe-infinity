@@ -1,19 +1,18 @@
-import { useFetcher } from "@remix-run/react";
-import type { ActionFunction, LoaderFunction } from "@netlify/remix-runtime";
+import { useFetcher, redirect, data, Form } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
-import { redirect, json } from "@netlify/remix-runtime";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import type { Route, Info } from "./+types/login";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
 
   const { data: user, error } = await supabase.auth.getUser();
 
   if (error) {
-    return json({ error: error.message }, { headers });
+    return data({ error: error.message }, { headers });
   }
 
   if (user) {
@@ -21,23 +20,28 @@ export const loader: LoaderFunction = async ({ request }) => {
     return redirect("/");
   }
 
-  return json({});
-};
+  return {};
+}
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: Route.ActionArgs) {
+  console.log("Starting login action");
   const formData = await request.formData();
   const email = formData.get("email") as string | null;
 
+  console.log("Email from form:", email);
+
   if (email === null) {
-    return json({ error: "Email is required" }, { status: 400 });
+    console.log("Email is null, returning error");
+    return data({ error: "Email is required" }, { status: 400 });
   }
 
   // Get the allowed emails from the environment variable
   const allowedEmails = process.env.ALLOWED_EMAILS?.split(",") || [];
+  console.log("Allowed emails:", allowedEmails);
 
   // Check if the email is in the allowed list
   if (!allowedEmails.includes(email)) {
-    // If not, redirect to the sign-up page
+    console.log("Email not in allowed list, redirecting to signup");
     return redirect("/signup");
   }
 
@@ -45,31 +49,39 @@ export const action: ActionFunction = async ({ request }) => {
   const supabase = await createSupabaseServerClient(request, headers);
 
   const SITE_URL = process.env.SITE_URL || "http://localhost:8888";
+  console.log("Using SITE_URL:", SITE_URL);
 
+  console.log("Attempting to sign in with OTP");
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: `${SITE_URL}/callback` },
   });
 
+  let success = false;
+  let message = "Magic link sent! Check your email.";
   if (error) {
-    return json({ error: error.message }, { headers });
+    console.error("Supabase auth error:", error);
+    message = error.message;
+  }
+  if (!error) {
+    console.log("Successfully sent magic link");
+    success = true;
   }
 
   // Return success message
-  return json(
-    { success: true, message: "Magic link sent! Check your email." },
-    { headers }
-  );
-};
+  return data({ success, error: error?.message, message }, { headers });
+}
 
-export default function Login() {
-  const fetcher = useFetcher<typeof action>();
+export default function Login({ actionData }: Route.ComponentProps) {
+  const fetcher = useFetcher();
   const [renderedContent, setRenderedContent] =
     useState<React.ReactNode | null>(null);
 
   useEffect(() => {
     const isSubmitting = fetcher.state === "submitting";
     const isSuccess = fetcher.data?.success;
+
+    console.log("fetcher", fetcher);
 
     setRenderedContent(
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900">

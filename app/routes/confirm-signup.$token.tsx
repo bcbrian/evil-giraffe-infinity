@@ -1,11 +1,11 @@
 // app/routes/confirm-signup.$token.tsx
-import { LoaderFunction, redirect } from "@netlify/remix-runtime";
+import { redirect } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { Resend } from "resend";
+import type { Route } from "./+types/confirm-signup.$token";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-export const loader: LoaderFunction = async ({ params, request }) => {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const { token } = params;
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
@@ -50,7 +50,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
 
   // Redirect to a success page
   return redirect("/signup?success=confirmed");
-};
+}
 
 export default function ConfirmSignup() {
   return null; // This route doesn't render anything, it just handles the confirmation

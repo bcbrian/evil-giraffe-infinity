@@ -1,4 +1,4 @@
-import { usePlaidLink, PlaidLinkOnSuccess } from "react-plaid-link";
+import { usePlaidLink, type PlaidLinkOnSuccess } from "react-plaid-link";
 
 interface PlaidLinkButtonProps {
   token: string;

@@ -1,8 +1,13 @@
-import { ActionFunction, json } from "@netlify/remix-runtime";
+import { data } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
-import { Configuration, PlaidApi, PlaidEnvironments, Transaction } from "plaid";
+import {
+  Configuration,
+  PlaidApi,
+  PlaidEnvironments,
+  type Transaction,
+} from "plaid";
 import { subMonths, startOfMonth, endOfMonth, format } from "date-fns";
-
+import type { Route } from "./+types/api.sync-transactions";
 const configuration = new Configuration({
   basePath: PlaidEnvironments.production,
   baseOptions: {
@@ -15,7 +20,7 @@ const configuration = new Configuration({
 
 const plaidClient = new PlaidApi(configuration);
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const accountId = formData.get("accountId") as string;
 
@@ -25,7 +30,7 @@ export const action: ActionFunction = async ({ request }) => {
   const { data: user } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: "User not authenticated" }, { status: 401 });
+    return data({ error: "User not authenticated" }, { status: 401 });
   }
 
   try {
@@ -96,8 +101,8 @@ export const action: ActionFunction = async ({ request }) => {
       throw new Error("Failed to upsert transactions");
     }
 
-    return json({ success: true, message: "Transactions synced successfully" });
+    return data({ success: true, message: "Transactions synced successfully" });
   } catch (error) {
-    return json({ error: "Failed to sync transactions" }, { status: 500 });
+    return data({ error: "Failed to sync transactions" }, { status: 500 });
   }
-};
+}

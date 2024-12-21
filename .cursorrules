@@ -1,17 +1,16 @@
-We are building a finance app. It allows the user to make budget categories, track expenses, and get insights on their spending. For auth it uses email magic links.
-
-You are an expert in Remix, Supabase, TailwindCSS, and TypeScript, focusing on scalable web development.
+You are an expert in React Router v7, Supabase, TailwindCSS, and TypeScript,
+focusing on scalable web development.
 
 **Key Principles**
 
-- Provide clear, precise Remix and TypeScript examples.
+- Provide clear, precise React Router v7 and TypeScript examples.
 - Apply immutability and pure functions where applicable.
 - Favor route modules and nested layouts for composition and modularity.
 - Use meaningful variable names (e.g., `isAuthenticated`, `userRole`).
 - Always use kebab-case for file names (e.g., `user-profile.tsx`).
 - Prefer named exports for loaders, actions, and components.
 
-**TypeScript & Remix**
+**TypeScript & React Router v7**
 
 - Define data structures with interfaces for type safety.
 - Avoid the `any` type, fully utilize TypeScript's type system.
@@ -20,7 +19,8 @@ You are an expert in Remix, Supabase, TailwindCSS, and TypeScript, focusing on s
 - Utilize optional chaining and nullish coalescing.
 - Use nested layouts and dynamic routes where applicable.
 - Leverage loaders for efficient server-side rendering and data fetching.
-- Use `useFetcher` and `useLoaderData` for seamless data management between client and server.
+- Use `useFetcher` and `useLoaderData` for seamless data management between
+  client and server.
 
 **File Naming Conventions**
 
@@ -31,10 +31,13 @@ You are an expert in Remix, Supabase, TailwindCSS, and TypeScript, focusing on s
 
 **Code Style**
 
-- prefer const over let
-- use prettier defaults to format code
+- Use single quotes for string literals.
+- Indent with 2 spaces.
+- Ensure clean code with no trailing whitespace.
+- Use `const` for immutable variables.
+- Use template strings for string interpolation.
 
-**Remix-Specific Guidelines**
+**React Router v7-Specific Guidelines**
 
 - Use `<Link>` for navigation, avoiding full page reloads.
 - Implement loaders and actions for server-side data loading and mutations.
@@ -45,7 +48,7 @@ You are an expert in Remix, Supabase, TailwindCSS, and TypeScript, focusing on s
 
 **Import Order**
 
-1. Remix core modules
+1. React Router v7 core modules
 2. React and other core libraries
 3. Third-party packages
 4. Application-specific imports
@@ -69,39 +72,26 @@ You are an expert in Remix, Supabase, TailwindCSS, and TypeScript, focusing on s
 - Prefetch routes using `<Link prefetch="intent">` for faster navigation.
 - Defer non-essential JavaScript using `<Scripts defer />`.
 - Optimize nested layouts to minimize re-rendering.
-- Use Remix's built-in caching and data revalidation to optimize performance.
+- Use React Router v7's built-in caching and data revalidation to optimize
+  performance.
 
 **Security**
 
 - Prevent XSS by sanitizing user-generated content.
-- Use Remix's CSRF protection for form submissions.
+- Use React Router v7's CSRF protection for form submissions.
 - Handle sensitive data on the server, never expose in client code.
 
 **Key Conventions**
 
-- Use Remix's loaders and actions to handle server-side logic.
+- Use React Router v7's loaders and actions to handle server-side logic.
 - Focus on reusability and modularity across routes and components.
-- Follow Remix’s best practices for file structure and data fetching.
+- Follow React Router v7’s best practices for file structure and data fetching.
 - Optimize for performance and accessibility.
 
-**Reference**
-Refer to Remix’s official documentation for best practices in Routes, Loaders, and Actions.
+**Reference** Refer to React Router v7’s official documentation for best
+practices in Routes, Loaders, and Actions.
 
-**Importing Remix Packages**
-
-- Always import from `@remix-run/react` and `@remix-run/node`.
-
-**Visual UI styles**
-
-- Use tailwind for visual ui styles
-
-- try to match designs in images
-
-**Next js**
-
-- We are using remix, not next.js
-- next js might have similar solutions but we need to prioritize remix
-
-**How to work with me**
-
-- when you are suggesting a change do not show me where the change is and then show me what the change is just show me the change so i can apply it, review it and accept or reject. when you show me what we are changing then show me what we are changing it to. it cost to many cyles and is slowing us down and you are loosing context and making more mistake because you are generating more tokens than nesecary.
+React Router v7 is a successor to Remix v2. There are some similarities, but
+there are also some differences. Mainly the imports are just from react-router
+now. do not replace react-router, imports with remix-run, imports that is
+incorrect. Do not do that.

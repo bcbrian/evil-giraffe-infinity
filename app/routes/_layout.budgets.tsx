@@ -1,5 +1,5 @@
-import { json, LoaderFunction } from "@netlify/remix-runtime";
-import { useLoaderData, Link, useSearchParams } from "@remix-run/react";
+import { data } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { UTCDate } from "@date-fns/utc";
 import MonthSelector from "~/components/MonthSelector";
@@ -14,7 +14,8 @@ import {
   buildCategoryHierarchy,
   calculateBudgetSpent,
 } from "~/utils/categoryUtils";
-import { Transaction } from "~/types";
+import type { Transaction } from "~/types";
+import type { Route } from "./+types/budgets";
 
 interface Budget {
   id: string;
@@ -35,7 +36,7 @@ interface LoaderData {
   }[];
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
   const {
@@ -43,7 +44,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: "Unauthorized" }, { status: 401 });
+    return data({ error: "Unauthorized" }, { status: 401 });
   }
 
   const url = new URL(request.url);
@@ -77,7 +78,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     .lte("date", lastDayOfMonth.toISOString());
 
   if (budgetsError || transactionsError) {
-    return json({ error: "Failed to fetch data" }, { status: 500 });
+    return data({ error: "Failed to fetch data" }, { status: 500 });
   }
 
   const categoriesWithAssignment = buildCategoryHierarchy(
@@ -100,17 +101,17 @@ export const loader: LoaderFunction = async ({ request }) => {
       )
   );
 
-  return json({
+  return data({
     budgets,
     transactions,
     currentMonth: currentDate.toISOString(),
     unassignedCategories,
   });
-};
+}
 
-export default function Budgets() {
+export default function Budgets({ loaderData }: Route.ComponentProps) {
   const { budgets, transactions, currentMonth, unassignedCategories } =
-    useLoaderData<LoaderData>();
+    loaderData;
   const [, setSearchParams] = useSearchParams();
 
   if (!budgets || budgets.length === 0) {

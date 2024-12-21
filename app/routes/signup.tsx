@@ -1,37 +1,37 @@
-import { Form, useActionData, useSearchParams } from "@remix-run/react";
-import type { ActionFunction, LoaderFunction } from "@netlify/remix-runtime";
+import { Form, useActionData, useSearchParams } from "react-router";
+import { redirect, data } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
-import { redirect, json } from "@netlify/remix-runtime";
 import { Resend } from "resend";
 import { v4 as uuidv4 } from "uuid";
 import { ConfirmationEmail } from "~/emails/ConfirmationEmail";
 import { useState } from "react";
+import type { Route } from "./+types/signup";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
 
   const { data: user, error } = await supabase.auth.getUser();
 
   if (error) {
-    return json({ error: error.message }, { headers });
+    return data({ error: error.message }, { headers });
   }
 
   if (user) {
     return redirect("/");
   }
 
-  return json({});
-};
+  return data({});
+}
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const email = formData.get("email") as string | null;
 
   if (email === null) {
-    return json({ error: "Email is required" }, { status: 400 });
+    return data({ error: "Email is required" }, { status: 400 });
   }
 
   const headers = new Headers();
@@ -44,7 +44,7 @@ export const action: ActionFunction = async ({ request }) => {
     .single();
 
   if (existingSignupError && existingSignupError.code !== "PGRST116") {
-    return json(
+    return data(
       { error: "An error occurred. Please try again later." },
       { status: 500, headers }
     );
@@ -52,12 +52,12 @@ export const action: ActionFunction = async ({ request }) => {
 
   if (existingSignup) {
     if (existingSignup.confirmed) {
-      return json(
+      return data(
         { error: "This email has already been confirmed for the beta." },
         { status: 400, headers }
       );
     } else {
-      return json(
+      return data(
         {
           error:
             "You've already signed up. Please check your email for the confirmation link.",
@@ -76,7 +76,7 @@ export const action: ActionFunction = async ({ request }) => {
   });
 
   if (error) {
-    return json({ error: error.message }, { status: 500, headers });
+    return data({ error: error.message }, { status: 500, headers });
   }
 
   try {
@@ -89,7 +89,7 @@ export const action: ActionFunction = async ({ request }) => {
       }),
     });
 
-    return json(
+    return data(
       {
         success: true,
         message:
@@ -98,12 +98,12 @@ export const action: ActionFunction = async ({ request }) => {
       { headers }
     );
   } catch (error) {
-    return json(
+    return data(
       { error: "Failed to send confirmation email" },
       { status: 500, headers }
     );
   }
-};
+}
 
 export default function Signup() {
   const actionData = useActionData<typeof action>();

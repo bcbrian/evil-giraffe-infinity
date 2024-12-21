@@ -1,8 +1,8 @@
-import { redirect } from "@netlify/remix-runtime";
-import type { LoaderFunction } from "@netlify/remix-runtime";
+import { redirect } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
+import type { Route } from "./+types/logout";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
 
@@ -17,7 +17,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   return redirect("/login", {
     headers: headers,
   });
-};
+}
 
 export default function Logout() {
   return null; // This component doesn't render anything

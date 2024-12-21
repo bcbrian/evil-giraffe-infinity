@@ -1,18 +1,14 @@
-import { json, LoaderFunction, redirect } from "@netlify/remix-runtime";
-import { useLoaderData } from "@remix-run/react";
+import { data, redirect } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
+import type { Route } from "./+types/callback";
 
-interface LoaderData {
-  error?: string;
-}
-
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
 
   if (!code) {
     console.error("Missing code", { code });
-    return json<LoaderData>({ error: "Missing code" });
+    return data({ error: "Missing code" });
   }
 
   const headers = new Headers();
@@ -22,17 +18,17 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   if (error) {
     console.error("Error handling auth callback:", error);
-    return json<LoaderData>({ error: error.message }, { headers });
+    return data({ error: error.message }, { status: 400 });
   }
 
   // Forward the Set-Cookie header to the client
   return redirect("/dashboard", {
     headers: headers,
   });
-};
+}
 
-export default function Callback() {
-  const data = useLoaderData<LoaderData>();
+export default function Callback({ loaderData }: Route.ComponentProps) {
+  const data = loaderData;
 
   if (data.error) {
     return <div>Error: {data.error}</div>;

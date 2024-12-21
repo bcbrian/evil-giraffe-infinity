@@ -1,28 +1,36 @@
 import {
+  data,
+  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
+  redirect,
   Scripts,
   ScrollRestoration,
-  // useLoaderData,
-} from "@remix-run/react";
-import { redirect, json } from "@netlify/remix-runtime";
-import type {
-  LoaderFunction,
-  ActionFunction,
-  LinksFunction,
-  MetaFunction,
-} from "@netlify/remix-runtime";
+} from "react-router";
 import { createSupabaseServerClient } from "./supabase/client.server";
 
-import styles from "./tailwind.css?url";
+import type { Route } from "./+types/root";
+import stylesheet from "./app.css?url";
 
-// Define a list of paths that don't require authentication
+// Define paths that don't require authentication
 const publicPaths = ["/login", "/callback", "/signup", "/confirm-signup"];
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
+export const links: Route.LinksFunction = () => [
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  {
+    rel: "preconnect",
+    href: "https://fonts.gstatic.com",
+    crossOrigin: "anonymous",
+  },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+  },
+  { rel: "stylesheet", href: stylesheet },
+];
 
-export const meta: MetaFunction = () => [
+export const meta: Route.MetaFunction = () => [
   { charset: "utf-8" },
   { title: "Evil Giraffe" },
   {
@@ -31,7 +39,11 @@ export const meta: MetaFunction = () => [
   },
 ];
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: Route.LoaderFunction = async ({
+  request,
+}: {
+  request: Request;
+}) => {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
   const {
@@ -46,17 +58,21 @@ export const loader: LoaderFunction = async ({ request }) => {
     path.startsWith(publicPath)
   );
   if (!user && !isPublicPath) {
-    return redirect("/login", { headers });
+    throw redirect("/login", { headers });
   }
 
   if (user && path === "/login") {
-    return redirect("/dashboard", { headers });
+    throw redirect("/dashboard", { headers });
   }
 
-  return json({ user }, { headers });
+  return data({ user }, { headers });
 };
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: Route.ActionFunction = async ({
+  request,
+}: {
+  request: Request;
+}) => {
   const formData = await request.formData();
   const email = formData.get("email")?.toString() as string | null;
   const headers = new Headers();
@@ -67,37 +83,56 @@ export const action: ActionFunction = async ({ request }) => {
     return { error: error.message };
   }
 
-  return json({ success: true }, { headers });
+  return data({ success: true }, { headers });
 };
 
-export default function App() {
-  // const { user } = useLoaderData<typeof loader>();
-
-  // useEffect(() => {
-  //   const { data: authListener } = supabase.auth.onAuthStateChange(
-  //     (event, session) => {
-  //       if (event === "SIGNED_IN") {
-  //         document.cookie = `sb:token=${session?.access_token}; path=/`;
-  //       }
-  //     }
-  //   );
-
-  //   return () => {
-  //     authListener?.subscription.unsubscribe();
-  //   };
-  // }, []);
-
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
       <body>
-        <Outlet />
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>
     </html>
+  );
+}
+
+export default function App() {
+  return <Outlet />;
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  let message = "Oops!";
+  let details = "An unexpected error occurred.";
+  let stack: string | undefined;
+
+  if (isRouteErrorResponse(error)) {
+    message = error.status === 404 ? "404" : "Error";
+    details =
+      error.status === 404
+        ? "The requested page could not be found."
+        : error.statusText || details;
+  } else if (import.meta.env.DEV && error && error instanceof Error) {
+    details = error.message;
+    stack = error.stack;
+  }
+
+  return (
+    <main className="pt-16 p-4 container mx-auto">
+      <h1>{message}</h1>
+      <p>{details}</p>
+      {stack && (
+        <pre className="w-full p-4 overflow-x-auto">
+          <code>{stack}</code>
+        </pre>
+      )}
+    </main>
   );
 }

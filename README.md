@@ -1,68 +1,53 @@
-# Welcome to Remix!
+# Welcome to React Router!
 
-- [Remix Docs](https://remix.run/docs)
-- [Netlify Functions Overview](https://docs.netlify.com/functions/overview)
+A modern, production-ready template for building full-stack React applications using React Router.
 
-## Netlify Setup
+## Features
 
-1. Install the [Netlify CLI](https://docs.netlify.com/cli/get-started/):
+- 🚀 Server-side rendering
+- ⚡️ Hot Module Replacement (HMR)
+- 📦 Asset bundling and optimization
+- 🔄 Data loading and mutations
+- 🔒 TypeScript by default
+- 🎉 TailwindCSS for styling
+- 📖 [React Router docs](https://reactrouter.com/)
 
-```sh
-npm i -g netlify-cli
-```
+## Getting Started
 
-If you have previously installed the Netlify CLI, you should update it to the latest version:
+### Installation
 
-```sh
-npm i -g netlify-cli@latest
-```
+Install the dependencies:
 
-2. Sign up and log in to Netlify:
-
-```sh
-netlify login
-```
-
-3. Create a new site:
-
-```sh
-netlify init
-```
-
-## Development
-
-Ensure all packages are installed by running:
-
-```sh
+```bash
 npm install
 ```
 
-Run
+### Development
 
-```sh
-netlify dev
+Start the development server with HMR:
+
+```bash
+npm run dev
 ```
 
-Open up [http://localhost:8888](http://localhost:8888), and you're ready to go!
+Your application will be available at `http://localhost:3000`.
 
-### Serve your site locally
+## Building for Production
 
-To serve your site locally in a production-like environment, run
+Create a production build:
 
-```sh
-netlify serve
+```bash
+npm run build
 ```
-
-Your site will be available at [http://localhost:8888](http://localhost:8888). Note that it will not auto-reload when you make changes.
 
 ## Deployment
 
-There are two ways to deploy your app to Netlify, you can either link your app to your git repo and have it auto deploy changes to Netlify, or you can deploy your app manually. If you've followed the setup instructions already, all you need to do is run this:
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/jacob-ebey/react-router-templates&create_from_path=netlify)
 
-```sh
-# preview deployment
-netlify deploy --build
+## Styling
 
-# production deployment
-netlify deploy --build --prod
-```
+This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+
+---
+
+Built with ❤️ using React Router.

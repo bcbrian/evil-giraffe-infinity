@@ -1,15 +1,14 @@
-import type { MetaFunction } from "@netlify/remix-runtime";
-import { LoaderFunction, redirect } from "@netlify/remix-runtime";
+import { redirect } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
-
-export const meta: MetaFunction = () => {
+import type { Route } from "./+types/_index";
+export const meta: Route.MetaFunction = () => {
   return [
     { title: "New Remix App" },
     { name: "description", content: "Welcome to Remix!" },
   ];
 };
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
 
@@ -27,7 +26,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     // Redirect to the login page if not authenticated
     return redirect("/login");
   }
-};
+}
 
 export default function Index() {
   return <div>these are not the droids you are looking for</div>;

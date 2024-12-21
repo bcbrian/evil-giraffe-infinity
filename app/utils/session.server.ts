@@ -1,4 +1,4 @@
-import { createCookieSessionStorage } from "@netlify/remix-runtime";
+import { createCookieSessionStorage } from "react-router";
 
 const { getSession, commitSession, destroySession } =
   createCookieSessionStorage({

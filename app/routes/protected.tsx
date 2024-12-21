@@ -1,9 +1,8 @@
-import { useLoaderData } from "@remix-run/react";
-import type { LoaderFunction } from "@netlify/remix-runtime";
 import { createSupabaseServerClient } from "~/supabase/client.server";
-import { redirect, json } from "@netlify/remix-runtime";
+import { redirect, data } from "react-router";
+import type { Route } from "./+types/protected";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
   const {
@@ -14,11 +13,9 @@ export const loader: LoaderFunction = async ({ request }) => {
     return redirect("/login");
   }
 
-  return json({ user }, { headers });
-};
+  return data({ user }, { headers });
+}
 
-export default function Protected() {
-  const { user } = useLoaderData<typeof loader>();
-
-  return <div>Welcome, {user.email}!</div>;
+export default function Protected({ loaderData }: Route.ComponentProps) {
+  return <div>Welcome, {loaderData.user.email}!</div>;
 }

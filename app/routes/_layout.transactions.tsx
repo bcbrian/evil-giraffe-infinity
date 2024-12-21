@@ -1,9 +1,10 @@
-import { json, LoaderFunction } from "@netlify/remix-runtime";
-import { useLoaderData, useSearchParams } from "@remix-run/react";
+import { data } from "react-router";
+import { useSearchParams } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Calendar, ChevronUp, ChevronDown, Tag } from "lucide-react";
+import type { Route } from "./+types/transactions";
 
 interface Transaction {
   id: string;
@@ -13,7 +14,7 @@ interface Transaction {
   category: string;
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
   const {
@@ -21,7 +22,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: "Unauthorized" }, { status: 401 });
+    return data({ error: "Unauthorized" }, { status: 401 });
   }
 
   const url = new URL(request.url);
@@ -50,14 +51,14 @@ export const loader: LoaderFunction = async ({ request }) => {
   const { data: transactions, error } = await query;
 
   if (error) {
-    return json({ error: error.message }, { status: 500 });
+    return data({ error: error.message }, { status: 500 });
   }
 
-  return json({ transactions });
-};
+  return data({ transactions });
+}
 
-export default function Transactions() {
-  const { transactions } = useLoaderData<typeof loader>();
+export default function Transactions({ loaderData }: Route.ComponentProps) {
+  const { transactions } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [isMobile, setIsMobile] = useState(false);

@@ -1,11 +1,11 @@
-import { Form, useActionData, Link } from "@remix-run/react";
-import type { ActionFunction } from "@netlify/remix-runtime";
-import { redirect, json } from "@netlify/remix-runtime";
+import { Form, useActionData, Link } from "react-router";
+import { redirect, data } from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { motion } from "framer-motion";
 import { DollarSign, X } from "lucide-react";
+import type { Route } from "./+types/budgets.new";
 
-export const action: ActionFunction = async ({ request }) => {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const name = formData.get("name") as string;
   const amount = parseFloat(formData.get("amount") as string);
@@ -25,11 +25,11 @@ export const action: ActionFunction = async ({ request }) => {
     .insert([{ name, amount, owner: user.id }]);
 
   if (error) {
-    return json({ error: error.message || "Unknown error" }, { headers });
+    return data({ error: error.message || "Unknown error" }, { headers });
   }
 
   return redirect("/budgets");
-};
+}
 
 export default function NewBudget() {
   const actionData = useActionData<typeof action>();

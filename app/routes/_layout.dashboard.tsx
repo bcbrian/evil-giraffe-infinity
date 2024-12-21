@@ -1,12 +1,13 @@
-import { json, LoaderFunction } from "@netlify/remix-runtime";
-import { useLoaderData } from "@remix-run/react";
+import { data } from "react-router";
+import { useLoaderData } from "react-router";
 import { BudgetCircle } from "~/components/BudgetCircle";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { calculateBudgetSpent } from "~/utils/categoryUtils";
+import type { Route } from "./+types/_layout.dashboars";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export async function loader({ request }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
   const {
@@ -14,7 +15,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({
+    return data({
       budgetPercentage: null,
       remainingAmount: null,
       daysLeft: null,
@@ -43,7 +44,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     .lte("date", lastDayOfMonth.toISOString());
 
   if (transactionsError) {
-    return json({
+    return data({
       budgetPercentage: null,
       remainingAmount: null,
       daysLeft: null,
@@ -58,7 +59,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     .eq("owner", user.id);
 
   if (budgetsError) {
-    return json({
+    return data({
       budgetPercentage: null,
       remainingAmount: null,
       daysLeft: null,
@@ -81,17 +82,16 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const daysLeft = lastDayOfMonth.getDate() - currentDate.getDate() + 1;
 
-  return json({
+  return data({
     budgetPercentage,
     remainingAmount,
     daysLeft,
     error: undefined,
   });
-};
+}
 
-export default function Dashboard() {
-  const { budgetPercentage, remainingAmount, daysLeft, error } =
-    useLoaderData<typeof loader>();
+export default function Dashboard({ loaderData }: Route.ComponentProps) {
+  const { budgetPercentage, remainingAmount, daysLeft, error } = loaderData;
   const [renderedContent, setRenderedContent] =
     useState<React.ReactNode | null>(null);
 

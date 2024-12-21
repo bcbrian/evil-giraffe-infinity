@@ -1,16 +1,11 @@
-import {
-  json,
-  LoaderFunction,
-  ActionFunction,
-  redirect,
-} from "@netlify/remix-runtime";
+import { data, redirect } from "react-router";
 import {
   useLoaderData,
   useActionData,
   useFetcher,
   useSearchParams,
   Link,
-} from "@remix-run/react";
+} from "react-router";
 import { createSupabaseServerClient } from "~/supabase/client.server";
 import { format, startOfMonth } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
@@ -32,9 +27,10 @@ import {
   buildCategoriesWithAssignment,
   calculateBudgetSpent,
 } from "~/utils/categoryUtils";
-import { Category, MerchantName, SubCategory } from "~/types";
+import type { Category, MerchantName, SubCategory } from "~/types";
+import type { Route } from "./+types/budgets.budgetId";
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
 
@@ -43,7 +39,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: "Unauthorized" }, { status: 401 });
+    return data({ error: "Unauthorized" }, { status: 401 });
   }
 
   const budgetId = Number(params.budgetId);
@@ -73,7 +69,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     .single();
 
   if (budgetError) {
-    return json({ error: "Failed to fetch budget" }, { status: 500 });
+    return data({ error: "Failed to fetch budget" }, { status: 500 });
   }
 
   const { data: transactions, error: transactionsError } = await supabase
@@ -84,7 +80,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     .eq("owner", user.id);
 
   if (transactionsError) {
-    return json({ error: "Failed to fetch transactions" }, { status: 500 });
+    return data({ error: "Failed to fetch transactions" }, { status: 500 });
   }
 
   const { data: allBudgets, error: allBudgetsError } = await supabase
@@ -93,7 +89,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
     .eq("owner", user.id);
 
   if (allBudgetsError) {
-    return json({ error: "Failed to fetch budgets" }, { status: 500 });
+    return data({ error: "Failed to fetch budgets" }, { status: 500 });
   }
 
   const categoriesWithAssignment = buildCategoriesWithAssignment(
@@ -104,15 +100,15 @@ export const loader: LoaderFunction = async ({ request, params }) => {
 
   const currentSpent = calculateBudgetSpent(budget, transactions);
 
-  return json({
+  return data({
     budget,
     categories: categoriesWithAssignment,
     currentSpent,
     currentMonth: currentDate.toISOString(),
   });
-};
+}
 
-export const action: ActionFunction = async ({ request, params }) => {
+export async function action({ request, params }: Route.ActionArgs) {
   const headers = new Headers();
   const supabase = await createSupabaseServerClient(request, headers);
   const {
@@ -134,14 +130,14 @@ export const action: ActionFunction = async ({ request, params }) => {
     .eq("owner", user.id);
 
   if (transactionsError) {
-    return json({ error: "Failed to fetch data" }, { status: 500 });
+    return data({ error: "Failed to fetch data" }, { status: 500 });
   }
 
   switch (intent) {
     case "updateBudgetAmount": {
       const budgetAmount = parseFloat(formData.get("budgetAmount") as string);
       if (isNaN(budgetAmount)) {
-        return json({ error: "Invalid budget amount" }, { status: 400 });
+        return data({ error: "Invalid budget amount" }, { status: 400 });
       }
       const { error: updateError } = await supabase
         .from("budgets")
@@ -149,12 +145,12 @@ export const action: ActionFunction = async ({ request, params }) => {
         .eq("id", budgetId);
 
       if (updateError) {
-        return json(
+        return data(
           { error: "Failed to update budget amount" },
           { status: 500 }
         );
       }
-      return json({ success: true });
+      return data({ success: true });
     }
     case "updateCategory": {
       const budgetId = Number(formData.get("budget") as string);
@@ -173,7 +169,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         .single();
 
       if (currentBudgetError) {
-        return json(
+        return data(
           { error: "Failed to fetch current budget" },
           { status: 500 }
         );
@@ -194,7 +190,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         .eq("id", budgetId);
 
       if (updateCategoryError) {
-        return json(
+        return data(
           { error: "Failed to update budget categories" },
           { status: 500 }
         );
@@ -205,7 +201,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         await supabase.from("budgets").select("*").eq("owner", user.id);
 
       if (updatedAllBudgetsError) {
-        return json(
+        return data(
           { error: "Failed to fetch updated budgets" },
           { status: 500 }
         );
@@ -224,7 +220,7 @@ export const action: ActionFunction = async ({ request, params }) => {
         budgetId
       );
 
-      return json({
+      return data({
         success: true,
         categories: updatedCategoriesWithAssignment,
         currentSpent: updatedCurrentSpent,
@@ -238,22 +234,22 @@ export const action: ActionFunction = async ({ request, params }) => {
         .eq("id", budgetId);
 
       if (deleteError) {
-        return json({ error: "Failed to delete budget" }, { status: 500 });
+        return data({ error: "Failed to delete budget" }, { status: 500 });
       }
       return redirect("/budgets");
     }
     default:
-      return json({ error: "Invalid intent" }, { status: 400 });
+      return data({ error: "Invalid intent" }, { status: 400 });
   }
-};
+}
 
-export default function ManageBudget() {
+export default function ManageBudget({ loaderData }: Route.ComponentProps) {
   const {
     budget,
     categories: initialCategories,
     currentSpent,
     currentMonth,
-  } = useLoaderData<typeof loader>();
+  } = loaderData;
   const actionData = useActionData<typeof action>();
   const fetcher = useFetcher<typeof action>();
   const [, setSearchParams] = useSearchParams();

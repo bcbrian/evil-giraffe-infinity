@@ -1,5 +1,5 @@
-import { json } from "@netlify/remix-runtime";
-import type { LoaderFunction } from "@netlify/remix-runtime";
+import { data } from "react-router";
+import type { LoaderFunction } from "react-router";
 import {
   PlaidApi,
   Configuration,
@@ -31,7 +31,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return json({ error: "Unauthorized" }, { status: 401 });
+    return data({ error: "Unauthorized" }, { status: 401 });
   }
 
   const userId = user.id;
@@ -45,9 +45,9 @@ export const loader: LoaderFunction = async ({ request }) => {
       products: [Products.Transactions],
     });
 
-    return json({ linkToken: response.data.link_token });
+    return data({ linkToken: response.data.link_token });
   } catch (error) {
     console.error("Error creating link token:", error);
-    return json({ error: "Failed to create link token" }, { status: 500 });
+    return data({ error: "Failed to create link token" }, { status: 500 });
   }
 };
