@@ -4,7 +4,8 @@ import { createSupabaseServerClient } from "~/supabase/client.server";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Calendar, ChevronUp, ChevronDown, Tag } from "lucide-react";
-import type { Route } from "./+types/transactions";
+import { getRecurringMonthlyTransactions } from "../utils/transactions-filter";
+import type { Route } from "./+types/_layout.transactions";
 
 interface Transaction {
   id: string;
@@ -54,10 +55,22 @@ export async function loader({ request }: Route.LoaderArgs) {
     return data({ error: error.message }, { status: 500 });
   }
 
-  return data({ transactions });
+  // Apply recurring filter if requested
+  const filterParam = url.searchParams.get("filter");
+  let filteredTransactions = transactions;
+  if (filterParam === "recurring-variance") {
+    filteredTransactions = getRecurringMonthlyTransactions(transactions, 0.03);
+  } else if (filterParam === "recurring") {
+    filteredTransactions = getRecurringMonthlyTransactions(transactions);
+  }
+
+  return data({ transactions: filteredTransactions });
 }
 
 export default function Transactions({ loaderData }: Route.ComponentProps) {
+  if ("error" in loaderData) {
+    return <div className="p-4 text-red-500">Error: {loaderData.error}</div>;
+  }
   const { transactions } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") || "");
@@ -94,6 +107,28 @@ export default function Transactions({ loaderData }: Route.ComponentProps) {
     });
   };
 
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    const [sortBy, sortOrder] = value.split("_");
+    setSearchParams((prev) => {
+      prev.set("sortBy", sortBy);
+      prev.set("sortOrder", sortOrder);
+      return prev;
+    });
+  };
+
+  const getCurrentSortOption = () => {
+    const currentSortBy = searchParams.get("sortBy");
+    const currentSortOrder = searchParams.get("sortOrder");
+    if (
+      (currentSortBy === "name" || currentSortBy === "amount") &&
+      (currentSortOrder === "asc" || currentSortOrder === "desc")
+    ) {
+      return `${currentSortBy}_${currentSortOrder}`;
+    }
+    return "name_asc";
+  };
+
   const SortIcon = ({ field }: { field: string }) => {
     const sortBy = searchParams.get("sortBy");
     const sortOrder = searchParams.get("sortOrder");
@@ -115,6 +150,37 @@ export default function Transactions({ loaderData }: Route.ComponentProps) {
       <h1 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
         Transactions
       </h1>
+
+      {/* Filter Controls for Recurring Transactions */}
+      <div className="mb-4">
+        <a
+          href="?filter=recurring"
+          className="text-blue-600 hover:underline mr-4"
+        >
+          Show Recurring Transactions
+        </a>
+        <a href="?" className="text-blue-600 hover:underline">
+          Show All Transactions
+        </a>
+      </div>
+
+      {/* Sorting Dropdown */}
+      <div className="mb-4">
+        <label htmlFor="sortDropdown" className="mr-2 text-sm text-purple-100">
+          Sort By:
+        </label>
+        <select
+          id="sortDropdown"
+          onChange={handleSortChange}
+          defaultValue={getCurrentSortOption()}
+          className="p-2 rounded-lg bg-black bg-opacity-50 text-purple-100"
+        >
+          <option value="name_asc">Name A-to-Z</option>
+          <option value="name_desc">Name Z-to-A</option>
+          <option value="amount_asc">Amount Ascending</option>
+          <option value="amount_desc">Amount Descending</option>
+        </select>
+      </div>
 
       <form onSubmit={handleSearch} className="mb-6">
         <div className="flex items-center bg-black bg-opacity-50 rounded-lg overflow-hidden">
